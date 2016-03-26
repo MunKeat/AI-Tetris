@@ -199,18 +199,6 @@ public class State {
 		
 		//check if game ended
 		if(height+pHeight[nextPiece][orient] >= ROWS) {
-			//MY EDIT
-			for(int i = 0; i < pWidth[nextPiece][orient]; i++) {
-				//from bottom to top of brick
-				for(int h = height+pBottom[nextPiece][orient][i]; h < height+pTop[nextPiece][orient][i] && h < ROWS; h++) {
-					field[h][i+slot] = turn;
-				}
-			}
-			for(int c = 0; c < pWidth[nextPiece][orient]; c++) {
-				top[slot+c]=Math.min(height+pTop[nextPiece][orient][c], ROWS);
-			}
-			//EDIT ENDS
-			
 			lost = true;
 			return false;
 		}
