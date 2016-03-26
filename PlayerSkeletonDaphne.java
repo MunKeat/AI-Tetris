@@ -27,10 +27,11 @@ public class PlayerSkeletonDaphne {
 	private double averageScore;
 	private double[] scoreHistory;
 	private double[] currentWeights;
+	//private double holes = 0;
 	private static Random rand = new Random();
 	
 	//magic strings and numbers
-	private static final int MAX_WEIGHTS_BOUNDARY = 10;
+	private static final int MAX_WEIGHTS_BOUNDARY = 50;
 	private static final int TOTAL_WEIGHT_PARAMETERS = 4;
 	private static final int ROTATION = 0;
 	private static final int LOCATION = 1;
@@ -127,6 +128,7 @@ public class PlayerSkeletonDaphne {
 					bestHueristic = hueristic;
 					move[ROTATION] = i;
 					move[LOCATION] = j;
+					//holes = calculateHoles(field, s.getTop(), rows);
 				}
 			}
 		}
@@ -144,7 +146,7 @@ public class PlayerSkeletonDaphne {
 		continueGame = simulateMove(orient, location, s, field, top, rows, cols, param);
 		if(continueGame){
 			for(int i=0; i<TOTAL_WEIGHT_PARAMETERS; ++i){
-				heuristic = addLocalParameter(i, s, top, field, heuristic, param, rows);
+				heuristic += addLocalParameter(i, s, top, field, heuristic, param, rows);
 			}
 		}else{
 			heuristic = -1;
@@ -184,8 +186,7 @@ public class PlayerSkeletonDaphne {
 		//System.out.println("#completed lines = " + param[0]);
 		return param[0];
 	}
-	
-	/* error code
+	/*
 	private double calculateHoles(int[][] field, int[] top, int rows){
 		int count = 0;
 		for(int i=0; i<top.length; ++i){
@@ -200,6 +201,22 @@ public class PlayerSkeletonDaphne {
 	}
 	*/
 	
+	private double calculateHoles(int[][] field, int[] top, int rows){
+		int numHoles = 0;
+		for(int i=0; i<top.length; ++i){
+			int count = 0;
+			for(int j=0; j<top[i]; ++j){
+				if(field[j][i] > 0){
+					++count;
+				}
+			}
+			numHoles += top[i]-count;
+		}
+		//System.out.println("#Number of holes = " + count);
+		return numHoles;
+	}
+	
+	/*
 	private double calculateHoles(int[][] field, int[] top, int rows){
 		int count = 0;
 		for(int i=0; i<top.length; ++i){
@@ -216,10 +233,11 @@ public class PlayerSkeletonDaphne {
 		}
 		return count;
 	}
+	*/
 
 	private double calculateBumpiness(int[] top){
 		double total = 0;
-		for(int i=0; i<top.length; i+=2){
+		for(int i=0; i<top.length-1; ++i){
 			total += Math.abs(top[i]-top[i+1]);
 		}
 		return total;
@@ -259,9 +277,6 @@ public class PlayerSkeletonDaphne {
 				
 			//from bottom to top of brick
 			for(int h = height+pBottom[nextPiece][orient][i]; h < height+pTop[nextPiece][orient][i]; ++h) {
-				if(h < 0){
-					return false;
-				}
 				field[h][i+location] = turn;
 			}
 		}
@@ -315,15 +330,15 @@ public class PlayerSkeletonDaphne {
 			p.randomizeWeights();
 			for(int i=0; i<MAX_WEIGHTS_BOUNDARY; ++i){
 				State s = new State();
-				TFrame t = new TFrame(s);
+				//TFrame t = new TFrame(s);
 				p.resetCount();
 				
 				letsPlayGame(s, p);
 				p.setScoreHistory(i, s.getRowsCleared());
-				t.dispose(); //close the frame from accumulating
+				//t.dispose(); //close the frame from accumulating
 			}
 			compareAndStoreResults(p);
-			System.out.println(numCycles + ": Average of " + MAX_WEIGHTS_BOUNDARY + " games = " + p.averageScore);
+			//System.out.println(numCycles + ": Average of " + MAX_WEIGHTS_BOUNDARY + " games = " + p.averageScore);
 			++numCycles;
 			storeWeights(p);
 			p.closeFileIO();
@@ -337,11 +352,13 @@ public class PlayerSkeletonDaphne {
 
 			//System.out.println("Piece = " + s.getNextPiece() + ", move " + p.getCount() + ": " + moves[0] + " " + moves[1]);
 			s.makeMove(moves);
-			s.draw();
-			s.drawNext(0,0);
+			//s.draw();
+			//s.drawNext(0,0);
 			p.incrementCount();
+			//p.printDoubleArray(s.getField());
+			//System.out.println("#Number of holes = " + p.holes);
 			try {
-				Thread.sleep(500);
+				Thread.sleep(0);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -360,12 +377,16 @@ public class PlayerSkeletonDaphne {
 		}
 		setCurrentWeights(weights);
 		*/
+		
 		double weight = rand.nextInt(1000000)/1000000.0;
-		if(rand.nextInt(2) == 0){
+		
+		int weightNum = PlayerSkeletonDaphne.numCycles%4;
+		if(weightNum != 1){
 			weight = -weight;
 		}
-		setCurrentWeights(PlayerSkeletonDaphne.numCycles%4,weight);
-		//setCurrentWeights(3,weight);
+		setCurrentWeights(weightNum,weight);
+		
+		//setCurrentWeights(1,weight);
 		
 	}
 
@@ -465,9 +486,9 @@ public class PlayerSkeletonDaphne {
 	
 	//Helper methods for debugging
 	private void printDoubleArray(int[][] doubleArray){
-		for(int i=0; i<doubleArray.length; ++i){
+		for(int i=doubleArray.length-1; i>=0; --i){
 			for(int j=0; j<doubleArray[i].length; ++j){
-				System.out.print(doubleArray[i][j] + " ");
+				System.out.print(doubleArray[i][j] + "\t");
 			}
 			System.out.println();
 		}
