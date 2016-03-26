@@ -1,3 +1,8 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.PrintWriter;
+import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class PlayerSkeletonMunKeat {
@@ -6,15 +11,30 @@ public class PlayerSkeletonMunKeat {
     private double COEFFICIENT_COMPLETED_LINES;
     private double COEFFICIENT_EMPTY_SLOTS;
     private double COEFFICIENT_BUMPINESS;
-    
+
     private static int DURATION_WAIT = 0;
     private static boolean DEBUG_FLAG = false;
+    private static boolean REPORT_STATE = false;
+
+    private final static String DATASET_START = "DATASET BEGIN";
+    private final static String DATASET_END = "DATASET END";
+    private final static int LEARNING_ROUNDS = 100;
+    private final static int MAXIMUM_NUMBER_DATA_SET = 50;
+    private final static double MUTATION_RATE = 0.25;
+    private final static double MUTATION_DEGREE = 0.001;
 
     PlayerSkeletonMunKeat() {
-        COEFFICIENT_AGGREGATE_HEIGHT = -0.51;
-        COEFFICIENT_COMPLETED_LINES = 0.76;
-        COEFFICIENT_EMPTY_SLOTS = -0.35;
-        COEFFICIENT_BUMPINESS = -0.18;
+         COEFFICIENT_AGGREGATE_HEIGHT = -0.510066; 
+         COEFFICIENT_COMPLETED_LINES = 0.760666; 
+         COEFFICIENT_EMPTY_SLOTS = -0.35663; 
+         COEFFICIENT_BUMPINESS = -0.184483;
+    }
+    
+    PlayerSkeletonMunKeat(double aggreHeight, double completedLines, double emptySlots, double bumpiness) {
+        COEFFICIENT_AGGREGATE_HEIGHT = aggreHeight; 
+        COEFFICIENT_COMPLETED_LINES = completedLines; 
+        COEFFICIENT_EMPTY_SLOTS = emptySlots; 
+        COEFFICIENT_BUMPINESS = bumpiness;
     }
 
     // implement this function to have a working system
@@ -29,18 +49,18 @@ public class PlayerSkeletonMunKeat {
         int slot = 0;
 
         int[][] legalMoves = s.legalMoves();
-        
+
         for (int i = 0; i < legalMoves.length; i++) {
             if (legalMoves[i][State.ORIENT] != orient) {
                 orient = legalMoves[i][State.ORIENT];
             }
-            
+
             columnToStartAt = legalMoves[i][State.SLOT];
-            
+
             calculatedUtility = calculateUtility(s, piece, orient, columnToStartAt);
-            
+
             if (maximumPossibleUtility < calculatedUtility) {
-                maximumPossibleUtility = calculatedUtility;                
+                maximumPossibleUtility = calculatedUtility;
                 orientation = orient;
                 slot = columnToStartAt;
             }
@@ -72,13 +92,6 @@ public class PlayerSkeletonMunKeat {
         predictedImpact = (COEFFICIENT_COMPLETED_LINES * completedLines) + (COEFFICIENT_EMPTY_SLOTS * emptySlots)
                 + (COEFFICIENT_BUMPINESS * bumpiness) + (COEFFICIENT_AGGREGATE_HEIGHT * aggregateHeight);
 
-        System.out.println("Completed Line: " + completedLines + "\n"
-                + "Slots: " + emptySlots + "\n"
-                + "Bumpiness: " + bumpiness + "\n"
-                + "Aggregate Height: " + aggregateHeight
-                + "\n\n\n");
-        
-        
         return predictedImpact;
     }
 
@@ -88,7 +101,7 @@ public class PlayerSkeletonMunKeat {
         int turn = s.getTurnNumber() + 1;
         int simulatedFieldCol = simulatedField[simulatedField.length - 1].length;
         int simulatedFieldRow = simulatedField.length;
-        
+
         int[] top = getTop(simulatedField);
 
         int[][] pWidth = State.getpWidth();
@@ -100,12 +113,11 @@ public class PlayerSkeletonMunKeat {
         for (int c = 0; c < pWidth[piece][orientation]; c++) {
             height = Math.max(height, top[colToStart + c] - pBottom[piece][orientation][c]);
         }
-        
+
         // check if game ended
         if (height + pHeight[piece][orientation] >= simulatedFieldRow) {
             return Integer.MIN_VALUE;
         }
-        
 
         // for each column in the piece - fill in the appropriate blocks
         for (int i = 0; i < pWidth[piece][orientation]; i++) {
@@ -137,8 +149,8 @@ public class PlayerSkeletonMunKeat {
                 }
             }
         }
-        
-        if(DEBUG_FLAG) {
+
+        if (DEBUG_FLAG) {
             System.out.println("\n");
             System.out.println("Placing Piece #" + piece + " || " + "Orientation: " + orientation);
             System.out.println("Top (Simulated Move): " + Arrays.toString(getTop(simulatedField)));
@@ -146,9 +158,11 @@ public class PlayerSkeletonMunKeat {
             System.out.println("Aggregate Height (Simulated Move): " + calculateAggregateHeight(simulatedField));
             int val = 0;
             System.out.println("Internal Representation: ");
-            for (int i = simulatedField.length - 2; i >= 0; i--) { // for each row
+            for (int i = simulatedField.length - 2; i >= 0; i--) { // for each
+                                                                   // row
                 System.out.print("[ ");
-                for (int j = 0; j < simulatedField[i].length; j++) { // for each column
+                for (int j = 0; j < simulatedField[i].length; j++) { // for each
+                                                                     // column
                     val = simulatedField[i][j] % 100;
                     if (val == 0) {
                         System.out.print("-- ");
@@ -163,7 +177,7 @@ public class PlayerSkeletonMunKeat {
             }
             System.out.println("\n\n");
         }
-        
+
         return linesCleared;
     }
 
@@ -175,31 +189,31 @@ public class PlayerSkeletonMunKeat {
         int countedHoles = 0;
         int temporarySpace = 0;
 
-        //DEBUG
+        // DEBUG
         int[] holes = new int[calculatedCol];
-        
+
         for (int col = 0; col < calculatedCol; col++) {
             for (int row = 0; row < calculatedRow; row++) {
                 if (field[row][col] == 0) {
                     temporarySpace++;
                 } else if (field[row][col] != 0) {
-                    
-                    if(DEBUG_FLAG) {
+
+                    if (DEBUG_FLAG) {
                         holes[col] += temporarySpace;
                     }
-                    
+
                     countedHoles += temporarySpace;
                     temporarySpace = 0;
                 }
             }
-            
+
             temporarySpace = 0;
         }
-        
-        if(DEBUG_FLAG) {
+
+        if (DEBUG_FLAG) {
             System.out.println("Holes: " + Arrays.toString(holes));
         }
-        
+
         return countedHoles;
     }
 
@@ -212,25 +226,23 @@ public class PlayerSkeletonMunKeat {
         // Calculate bumpiness
         for (int col = 1; col < calculatedCol; col++) {
             bumpiness += Math.abs(top[col] - top[col - 1]);
-            
-            if(DEBUG_FLAG) {
-                
+
+            if (DEBUG_FLAG) {
+
             }
         }
-        
+
         return bumpiness;
     }
 
     private int calculateAggregateHeight(int[][] field) {
-        // Assume that width and height are constants
-        int calculatedCol = field[field.length - 1].length;
         int aggregateHeight = 0;
         int[] top = getTop(field);
 
-        for(int height: top) {
+        for (int height : top) {
             aggregateHeight += height;
         }
-        
+
         return aggregateHeight;
     }
 
@@ -252,6 +264,208 @@ public class PlayerSkeletonMunKeat {
 
         return top;
     }
+    
+    public void geneticAlgorithm() {
+        /******************************************************************************************
+         * Note: Dataset follows the convention Aggregate height, completed
+         * lines, empty slots, bumpiness, <results gathered...>
+         * 
+         * PLEASE DON'T EDIT ANYTHING HERE
+         ******************************************************************************************/
+ 
+        // DATASET BEGIN
+        int datasetIndex = 0;
+
+        double[][] dataset = { 
+                {-0.51, 0.76, -0.35, -0.18, },
+                {-0.5, 0.5, -0.5, -0.5, },
+                {-0.5, 0.5, -0.5, -0.5, },
+                {-0.5, 0.5, -0.5, -0.5, },
+                {-0.5, 0.5, -0.5, -0.5, },
+                {-0.5, 0.5, -0.5, -0.5, },
+                {-0.5, 0.5, -0.5, -0.5, },
+                {-0.5, 0.5, -0.5, -0.5, },
+                {-0.5, 0.5, -0.5, -0.5, },
+                {-0.5, 0.5, -0.5, -0.5, },
+                };
+        // DATASET END
+        
+        // Check if dataset has sufficient value; if not, populate them with seed values
+        modifyCurrentFile(datasetIndex, dataset.length);
+        
+        // Run algorithm
+        
+        // Append data to dataset
+        ArrayList<Double> scores = new ArrayList<Double>();
+        int sum = 0;
+        
+        while(true) {
+            State s = new State();
+            
+            PlayerSkeletonMunKeat p = new PlayerSkeletonMunKeat(dataset[datasetIndex][0], dataset[datasetIndex][1], 
+                    dataset[datasetIndex][2], dataset[datasetIndex][3]);
+            
+            while (!s.hasLost()) {
+                p.pickMove(s);
+            }
+            
+            scores.add((double)s.getRowsCleared());
+            sum += s.getRowsCleared();
+            
+            if(scores.size() == LEARNING_ROUNDS) {
+                scores.add(((double)sum/scores.size()));
+                scores.add(getStandardDeviation(scores, sum/scores.size()));
+                break;
+            }
+        }
+        
+        appendResultsToFile(scores, datasetIndex);
+        
+        datasetIndex = (datasetIndex + 1) % MAXIMUM_NUMBER_DATA_SET ;
+        
+        //System.out.println(scores.toString());
+    }
+    
+    private void appendResultsToFile(ArrayList<Double> scores, int datasetIndex) {
+        final String results = scores.toString().replace("[", "").replace("]", "");
+        
+        ArrayList<String> fileContent = new ArrayList<String>();
+        String line, path, fileName = null, decodedPath = null;
+        
+        try {
+            // Find file path, and name
+            path = PlayerSkeletonMunKeat.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+            fileName = getClass().getName() + ".java";
+            decodedPath = URLDecoder.decode(path + fileName, "UTF-8");
+            // Read file in array
+            BufferedReader br = new BufferedReader(new FileReader(decodedPath));
+            while ((line = br.readLine()) != null) {
+                fileContent.add(line);
+            }
+            br.close();
+            
+            boolean beginDataset = false;
+            
+            // Begin file modification
+            for (int lineNumber = 0; lineNumber < fileContent.size(); lineNumber++) {
+                line = fileContent.get(lineNumber);
+
+                if (line.contains(DATASET_START)) {
+                    beginDataset = true;
+                    continue;
+                } else if (line.contains(DATASET_END)) {
+                    beginDataset = false;
+                    continue;
+                }
+                
+                // Begin appending if not of sufficient size
+                if (beginDataset && line.contains("double[][] dataset = {")) {
+                    int innerline;
+                    
+                    for (innerline = lineNumber; (innerline-lineNumber) < datasetIndex + 1 ; innerline++);
+                    line = fileContent.get(innerline);
+                    // Check if line has no results appended
+                    if(line.length() - line.replace(",", "").length() <= 5) {
+                        line = line.replace("},", results + "},");
+                        fileContent.set(innerline, line);
+                    }
+                }
+            }
+            
+            PrintWriter pw = new PrintWriter(decodedPath);
+            for (String lineContent : fileContent) {
+                pw.println(lineContent);
+            }
+            
+            pw.flush();
+            pw.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private double getStandardDeviation(ArrayList<Double> array, double mean) {
+        double sum = 0;
+ 
+        for (double scores: array) {
+            sum += Math.pow((scores - mean), 2);
+        }
+ 
+        return Math.sqrt(sum/ (array.size())); // maybe n should go here?
+
+    }
+    
+    private void modifyCurrentFile(int datasetIndex, int datasetLength) {
+        ArrayList<String> fileContent = new ArrayList<String>();
+        String line, path, fileName = null, decodedPath = null;
+        
+        try {
+            // Find file path, and name
+            path = PlayerSkeletonMunKeat.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+            fileName = getClass().getName() + ".java";
+            decodedPath = URLDecoder.decode(path + fileName, "UTF-8");
+            // Read file in array
+            BufferedReader br = new BufferedReader(new FileReader(decodedPath));
+            while ((line = br.readLine()) != null) {
+                fileContent.add(line);
+            }
+            br.close();
+            
+            modifyArrayRepresentationOfFileContent(fileContent, datasetIndex, datasetLength);
+            
+            PrintWriter pw = new PrintWriter(decodedPath);
+            for (String lineContent : fileContent) {
+                pw.println(lineContent);
+            }
+            
+            pw.flush();
+            pw.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private void modifyArrayRepresentationOfFileContent(ArrayList<String> fileContent, int datasetIndex, int datasetLength) {
+        String line;
+        String defaultDataset = "                {-0.5, 0.5, -0.5, -0.5, },";
+        
+        boolean beginDataset = false, isDatasetOfSufficientSize = false;
+        // Check if dataset is of sufficient size
+        if (datasetLength >= MAXIMUM_NUMBER_DATA_SET / 5) {
+            isDatasetOfSufficientSize = true;
+        }
+        
+        // Begin file modification
+        for (int lineNumber = 0; lineNumber < fileContent.size(); lineNumber++) {
+            line = fileContent.get(lineNumber);
+
+            if (line.contains(DATASET_START)) {
+                beginDataset = true;
+                continue;
+            } else if (line.contains(DATASET_END)) {
+                beginDataset = false;
+                continue;
+            }
+            
+            if(beginDataset && line.contains("datasetIndex")) {
+                line = line.replaceAll("\\d", "" + ((datasetIndex + 1) % (Math.min(datasetLength, MAXIMUM_NUMBER_DATA_SET))));
+                fileContent.set(lineNumber, line);
+            }
+
+            // Begin appending if not of sufficient size
+            if (beginDataset && isDatasetOfSufficientSize == false && line.contains("double[][] dataset = {")) {
+                int innerline;
+                int shortFallOfDataset = (MAXIMUM_NUMBER_DATA_SET/5 - datasetLength);
+                
+                for (innerline = lineNumber + 1; !fileContent.get(innerline).contains("};"); innerline++);
+                for (int i = 0; i < shortFallOfDataset; i++) {
+                    fileContent.add((innerline), defaultDataset);
+                }
+
+                isDatasetOfSufficientSize = true;
+            }
+        }
+    }
 
     public static void reportState(State s, int[][] legalMoves) {
         int[][] pWidth = State.getpWidth();
@@ -270,23 +484,14 @@ public class PlayerSkeletonMunKeat {
                 for (int j = 0; j < pWidth[piece][0]; j++) {
                     if (pBottom[piece][0][j] < (i + 1) && pTop[piece][0][j] >= (i + 1)) {
                         turn = turn % 100;
-                        if ((turn + 1) < 10) {
-                            System.out.print("0");
-                        }
-                        System.out.print((turn + 1) + " ");
+                        System.out.print(String.format("%02d ", (turn + 1)));
                     } else {
                         System.out.print("   ");
                     }
                 }
-                System.out.println("");
+                System.out.println();
             }
-            System.out.println("");
-            /*
-             * for(int i = pHeight[piece][orient]-1; i >= 0; i--) { for(int j =
-             * 0; j < pWidth[piece][orient]; j++) { System.out.println("[" +
-             * (i+1) + " " + (j+1) + " " + pBottom[piece][orient][j] + " " +
-             * pTop[piece][orient][j] + "]"); } }
-             */
+            System.out.println();
         } else {
             System.out.println("-------- Game Over! --------");
         }
@@ -306,12 +511,10 @@ public class PlayerSkeletonMunKeat {
             } else {
                 // occupied square (number represents the turn in which the
                 // piece is placed)
-                if (val < 10) {
-                    System.out.print("0");
-                }
-                System.out.print(field[field.length - 1][j] + " ");
+                System.out.print(String.format("%02d ", val));
             }
         }
+        
         System.out.println("]  <--- Can't touch this");
         // Print the rest of the playing field (all the visible rows)
         for (int i = field.length - 2; i >= 0; i--) { // for each row
@@ -323,10 +526,7 @@ public class PlayerSkeletonMunKeat {
                 } else {
                     // occupied square (number represents the turn in which the
                     // piece is placed)
-                    if (val < 10) {
-                        System.out.print("0");
-                    }
-                    System.out.print(val + " ");
+                    System.out.print(String.format("%02d ", val));
                 }
             }
             System.out.println("]");
@@ -336,18 +536,15 @@ public class PlayerSkeletonMunKeat {
         int top[] = s.getTop();
         System.out.println("---------------------------------");
         System.out.print("[ ");
-        for (int i = 0; i < top.length; i++) {
-            if (top[i] < 10) {
-                System.out.print("0");
-            }
-            System.out.print(top[i] + " ");
+        for (int height : top) {
+            System.out.print(String.format("%02d ", height));
         }
         System.out.print("]  <--- Column heights");
 
         if (!s.hasLost()) {
+            int orient = 0;
             // Print the legal moves
             System.out.println("\n\nLegal Moves: ");
-            int orient = 0;
             System.out.print("Orientation " + (orient + 1) + ": [");
             for (int i = 0; i < legalMoves.length; i++) {
                 int slot;
@@ -370,7 +567,9 @@ public class PlayerSkeletonMunKeat {
         new TFrame(s);
         PlayerSkeletonMunKeat p = new PlayerSkeletonMunKeat();
         while (!s.hasLost()) {
-            if(DEBUG_FLAG) { reportState(s, s.legalMoves());}
+            if (DEBUG_FLAG || REPORT_STATE) {
+                reportState(s, s.legalMoves());
+            }
             p.pickMove(s);
             s.draw();
             s.drawNext(0, 0);
@@ -379,8 +578,10 @@ public class PlayerSkeletonMunKeat {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
         }
+
+        //p.geneticAlgorithm();
         System.out.println("You have completed " + s.getRowsCleared() + " rows.");
+        System.exit(0);
     }
 }
