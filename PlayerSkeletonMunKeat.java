@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class PlayerSkeletonMunKeat {
 
@@ -24,10 +25,10 @@ public class PlayerSkeletonMunKeat {
     private final static double MUTATION_DEGREE = 0.001;
 
     PlayerSkeletonMunKeat() {
-         COEFFICIENT_AGGREGATE_HEIGHT = -0.510066; 
-         COEFFICIENT_COMPLETED_LINES = 0.760666; 
-         COEFFICIENT_EMPTY_SLOTS = -0.35663; 
-         COEFFICIENT_BUMPINESS = -0.184483;
+         COEFFICIENT_AGGREGATE_HEIGHT = -0.04978;
+         COEFFICIENT_COMPLETED_LINES = 0.1;//0.35336; 
+         COEFFICIENT_EMPTY_SLOTS = -0.991925; 
+         COEFFICIENT_BUMPINESS = -0.23183;
     }
     
     PlayerSkeletonMunKeat(double aggreHeight, double completedLines, double emptySlots, double bumpiness) {
@@ -51,6 +52,7 @@ public class PlayerSkeletonMunKeat {
         int[][] legalMoves = s.legalMoves();
 
         for (int i = 0; i < legalMoves.length; i++) {
+            
             if (legalMoves[i][State.ORIENT] != orient) {
                 orient = legalMoves[i][State.ORIENT];
             }
@@ -65,7 +67,7 @@ public class PlayerSkeletonMunKeat {
                 slot = columnToStartAt;
             }
         }
-
+        
         s.makeMove(orientation, slot);
     }
 
@@ -275,18 +277,9 @@ public class PlayerSkeletonMunKeat {
  
         // DATASET BEGIN
         int datasetIndex = 0;
-
-        double[][] dataset = { 
-                {-0.51, 0.76, -0.35, -0.18, },
-                {-0.5, 0.5, -0.5, -0.5, },
-                {-0.5, 0.5, -0.5, -0.5, },
-                {-0.5, 0.5, -0.5, -0.5, },
-                {-0.5, 0.5, -0.5, -0.5, },
-                {-0.5, 0.5, -0.5, -0.5, },
-                {-0.5, 0.5, -0.5, -0.5, },
-                {-0.5, 0.5, -0.5, -0.5, },
-                {-0.5, 0.5, -0.5, -0.5, },
-                {-0.5, 0.5, -0.5, -0.5, },
+        
+        double[][] dataset = {
+                {-0.04978, 0.35336, -0.991925, -0.23183, },
                 };
         // DATASET END
         
@@ -294,36 +287,59 @@ public class PlayerSkeletonMunKeat {
         modifyCurrentFile(datasetIndex, dataset.length);
         
         // Run algorithm
-        
-        // Append data to dataset
-        ArrayList<Double> scores = new ArrayList<Double>();
-        int sum = 0;
-        
-        while(true) {
-            State s = new State();
+        for(int i = 0; i < dataset.length; i++) {
+            // Check if data is untested
+            if(dataset[i].length > 4) {
+                continue;
+            }            
             
-            PlayerSkeletonMunKeat p = new PlayerSkeletonMunKeat(dataset[datasetIndex][0], dataset[datasetIndex][1], 
-                    dataset[datasetIndex][2], dataset[datasetIndex][3]);
+            // Append data to dataset
+            ArrayList<Double> scores = new ArrayList<Double>();
+            int sum = 0;
             
-            while (!s.hasLost()) {
-                p.pickMove(s);
+            while(true) {
+                State s = new State();
+                
+                PlayerSkeletonMunKeat p = new PlayerSkeletonMunKeat(dataset[datasetIndex][0], dataset[datasetIndex][1], 
+                        dataset[datasetIndex][2], dataset[datasetIndex][3]);
+                
+                while (!s.hasLost()) {
+                    p.pickMove(s);
+                }
+                
+                scores.add((double)s.getRowsCleared());
+                sum += s.getRowsCleared();
+                
+                if(scores.size() == LEARNING_ROUNDS) {
+                    scores.add(((double)sum/scores.size()));
+                    scores.add(getScaledStandardDeviation(scores, sum/scores.size()));
+                    break;
+                }
             }
-            
-            scores.add((double)s.getRowsCleared());
-            sum += s.getRowsCleared();
-            
-            if(scores.size() == LEARNING_ROUNDS) {
-                scores.add(((double)sum/scores.size()));
-                scores.add(getStandardDeviation(scores, sum/scores.size()));
-                break;
-            }
+            appendResultsToFile(scores, datasetIndex);
+            datasetIndex = (datasetIndex + 1) % MAXIMUM_NUMBER_DATA_SET ;
         }
         
-        appendResultsToFile(scores, datasetIndex);
+        darwinSelection();
+        reproduce();
+    }
+    
+    private void darwinSelection() {
+        ArrayList<String> result;
         
-        datasetIndex = (datasetIndex + 1) % MAXIMUM_NUMBER_DATA_SET ;
+        // TODO Sort array
         
-        //System.out.println(scores.toString());
+        // Remove 1/2
+        
+        // Print
+        
+    }
+    
+    private void reproduce() {
+        // Select 10% from 2 gene pool
+        
+        // Offspring, with weighted average based on lines cleared
+        
     }
     
     private void appendResultsToFile(ArrayList<Double> scores, int datasetIndex) {
@@ -384,15 +400,12 @@ public class PlayerSkeletonMunKeat {
         }
     }
     
-    private double getStandardDeviation(ArrayList<Double> array, double mean) {
+    private double getScaledStandardDeviation(ArrayList<Double> array, double mean) {
         double sum = 0;
- 
         for (double scores: array) {
             sum += Math.pow((scores - mean), 2);
         }
- 
-        return Math.sqrt(sum/ (array.size())); // maybe n should go here?
-
+        return (Math.sqrt(sum/ (array.size()))) / mean; // maybe n should go here?
     }
     
     private void modifyCurrentFile(int datasetIndex, int datasetLength) {
@@ -427,11 +440,11 @@ public class PlayerSkeletonMunKeat {
     
     private void modifyArrayRepresentationOfFileContent(ArrayList<String> fileContent, int datasetIndex, int datasetLength) {
         String line;
-        String defaultDataset = "                {-0.5, 0.5, -0.5, -0.5, },";
+        String defaultDataset = "                {-%.5f, %.5f, -%.5f, -%.5f, },";
         
         boolean beginDataset = false, isDatasetOfSufficientSize = false;
         // Check if dataset is of sufficient size
-        if (datasetLength >= MAXIMUM_NUMBER_DATA_SET / 5) {
+        if (datasetLength >= MAXIMUM_NUMBER_DATA_SET) {
             isDatasetOfSufficientSize = true;
         }
         
@@ -452,19 +465,30 @@ public class PlayerSkeletonMunKeat {
                 fileContent.set(lineNumber, line);
             }
 
-            // Begin appending if not of sufficient size
+            // Begin generating random seed values if not of sufficient size
             if (beginDataset && isDatasetOfSufficientSize == false && line.contains("double[][] dataset = {")) {
                 int innerline;
-                int shortFallOfDataset = (MAXIMUM_NUMBER_DATA_SET/5 - datasetLength);
+                int shortFallOfDataset = (MAXIMUM_NUMBER_DATA_SET - datasetLength);
                 
                 for (innerline = lineNumber + 1; !fileContent.get(innerline).contains("};"); innerline++);
                 for (int i = 0; i < shortFallOfDataset; i++) {
-                    fileContent.add((innerline), defaultDataset);
+                    double [] randomValues = generateRandomValues();
+                    fileContent.add((innerline), String.format(defaultDataset, randomValues[0], randomValues[1], randomValues[2],randomValues[3]));
                 }
 
                 isDatasetOfSufficientSize = true;
             }
         }
+    }
+    
+    private double [] generateRandomValues() {
+        double [] answer = new double[4];
+        
+        for(int i = 0 ; i < 4; i++) {
+            answer[i] = ThreadLocalRandom.current().nextDouble(0, 1);
+        }
+        
+        return answer;
     }
 
     public static void reportState(State s, int[][] legalMoves) {
