@@ -343,12 +343,12 @@ public class PlayerSkeletonDaphne {
 			p.randomizeWeights();
 			for(int i=0; i<MAX_WEIGHTS_BOUNDARY; ++i){
 				State s = new State();
-				//TFrame t = new TFrame(s);
+				TFrame t = new TFrame(s);
 				p.resetCount();
 				
 				letsPlayGame(s, p);
 				p.setScoreHistory(i, s.getRowsCleared());
-				//t.dispose(); //close the frame from accumulating
+				t.dispose(); //close the frame from accumulating
 			}
 			compareAndStoreResults(p);
 			System.out.println(numCycles + ": Average of " + MAX_WEIGHTS_BOUNDARY + " games = " + p.averageScore);
@@ -365,8 +365,8 @@ public class PlayerSkeletonDaphne {
 
 			//System.out.println("Piece = " + s.getNextPiece() + ", move " + p.getCount() + ": " + moves[0] + " " + moves[1]);
 			s.makeMove(moves);
-			//s.draw();
-			//s.drawNext(0,0);
+			s.draw();
+			s.drawNext(0,0);
 			p.incrementCount();
 			//p.printDoubleArray(s.getField());
 			//System.out.println("#Number of holes = " + p.holes);
@@ -376,7 +376,7 @@ public class PlayerSkeletonDaphne {
 				e.printStackTrace();
 			}
 		}
-		//System.out.println("You have completed "+s.getRowsCleared()+" rows in " + p.getCount() + " turns.");
+		System.out.println("You have completed "+s.getRowsCleared()+" rows in " + p.getCount() + " turns.");
 	}
 	private void randomizeWeights() {
 		/*
