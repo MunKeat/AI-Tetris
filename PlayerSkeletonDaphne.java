@@ -32,7 +32,7 @@ public class PlayerSkeletonDaphne {
 	
 	//magic strings and numbers
 	private static final int MAX_WEIGHTS_BOUNDARY = 50;
-	private static final int TOTAL_WEIGHT_PARAMETERS = 4;
+	private static final int TOTAL_WEIGHT_PARAMETERS = 5;
 	private static final int ROTATION = 0;
 	private static final int LOCATION = 1;
 	
@@ -112,18 +112,13 @@ public class PlayerSkeletonDaphne {
 	public int[] pickMove(State s, int[][] legalMoves) {
 		int[] move = {0,0};
 		int numPossibleRotations = State.getpOrients()[s.getNextPiece()];
-		int[][] fieldCopy = s.getField();
-		int rows = fieldCopy.length;
-		int cols = fieldCopy[0].length;
-		int[][] field = new int[rows][];
-		for(int i=0; i<rows; ++i){
-			field[i] = Arrays.copyOf(fieldCopy[i], fieldCopy[i].length);
-		}
+		int rows = s.getField().length;
+		int cols = s.getField()[0].length;
 		double bestHueristic = -1000000;
 		
 		for(int i=0; i<numPossibleRotations; ++i){
 			for(int j=0; j<cols-State.getpWidth()[s.getNextPiece()][i]+1; ++j){
-				double hueristic = calculateHueristic(s,i,j,field,rows,cols);
+				double hueristic = calculateHueristic(s,i,j,rows,cols);
 				if(hueristic > bestHueristic){
 					bestHueristic = hueristic;
 					move[ROTATION] = i;
@@ -136,26 +131,31 @@ public class PlayerSkeletonDaphne {
 		return move;
 	}
 	
-	private double calculateHueristic(State s, int orient, int location, int[][] field, int rows, int cols){
+	private double calculateHueristic(State s, int orient, int location, int rows, int cols){
 		double heuristic = 0;
+		int[][] fieldCopy = s.getField();
+		int[][] field = new int[rows][];
+		for(int i=0; i<rows; ++i){
+			field[i] = Arrays.copyOf(fieldCopy[i], fieldCopy[i].length);
+		}
 		int[] top = Arrays.copyOf(s.getTop(), s.getTop().length);
 		int[] param = new int[1];
 		//printDoubleArray(s.getField()); //debugging purpose
 		boolean continueGame = true;
-		
+		double holes = calculateHoles(field, top, rows);
 		continueGame = simulateMove(orient, location, s, field, top, rows, cols, param);
 		if(continueGame){
 			for(int i=0; i<TOTAL_WEIGHT_PARAMETERS; ++i){
-				heuristic += addLocalParameter(i, s, top, field, heuristic, param, rows);
+				heuristic = addLocalParameter(i, s, top, field, heuristic, param, rows, holes);
 			}
 		}else{
-			heuristic = -1;
+			heuristic = -1000000;
 		}
 		
 		return heuristic;
 	}
 
-	private double addLocalParameter(int index, State s, int[] top, int[][] field, double heuristic, int[] param, int rows) {
+	private double addLocalParameter(int index, State s, int[] top, int[][] field, double heuristic, int[] param, int rows, double holes) {
 		switch(index){
 			case 0: //solved
 				heuristic += currentWeights[index]*calculateAggregatedHeight(top);
@@ -164,15 +164,28 @@ public class PlayerSkeletonDaphne {
 				heuristic += currentWeights[index]*calculateCompletedLines(param);
 				break;
 			case 2:
-				heuristic += currentWeights[index]*calculateHoles(field, top, rows);
+				heuristic += currentWeights[index]*(calculateHoles(field, top, rows)-holes);
 				break;
 			case 3: //solved
 				heuristic += currentWeights[index]*calculateBumpiness(top);
+				break;
+			case 4:
+				heuristic += currentWeights[index]*calculateMaxHeight(top);
 				break;
 		}
 		return heuristic;
 	}
 	
+	private double calculateMaxHeight(int[] top) {
+		int tallest = -1;
+		for(int i=0; i<top.length; ++i){
+			if(top[i] > tallest){
+				tallest = top[i];
+			}
+		}
+		return tallest;
+	}
+
 	private double calculateAggregatedHeight(int[] top){
 		int total = 0;
 		for(int i=0; i<top.length; ++i){
@@ -338,7 +351,7 @@ public class PlayerSkeletonDaphne {
 				t.dispose(); //close the frame from accumulating
 			}
 			compareAndStoreResults(p);
-			//System.out.println(numCycles + ": Average of " + MAX_WEIGHTS_BOUNDARY + " games = " + p.averageScore);
+			System.out.println(numCycles + ": Average of " + MAX_WEIGHTS_BOUNDARY + " games = " + p.averageScore);
 			++numCycles;
 			storeWeights(p);
 			p.closeFileIO();
@@ -358,7 +371,7 @@ public class PlayerSkeletonDaphne {
 			//p.printDoubleArray(s.getField());
 			//System.out.println("#Number of holes = " + p.holes);
 			try {
-				Thread.sleep(300);
+				Thread.sleep(0);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -376,18 +389,18 @@ public class PlayerSkeletonDaphne {
 			}
 		}
 		setCurrentWeights(weights);
-		*/
+		
 		
 		double weight = rand.nextInt(1000000)/1000000.0;
 		
-		int weightNum = PlayerSkeletonDaphne.numCycles%4;
+		int weightNum = PlayerSkeletonDaphne.numCycles%TOTAL_WEIGHT_PARAMETERS;
 		if(weightNum != 1){
 			weight = -weight;
 		}
 		setCurrentWeights(weightNum,weight);
 		
 		//setCurrentWeights(1,weight);
-		
+		*/
 	}
 
 	//END OF implement this function to have a working system
