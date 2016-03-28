@@ -340,7 +340,9 @@ public class PlayerSkeletonDaphne {
 		while(true){
 			p.initializeFileRead();
 			p.initializeWeights();
-			p.randomizeWeights();
+			
+			//p.randomizeWeights();
+			
 			for(int i=0; i<MAX_WEIGHTS_BOUNDARY; ++i){
 				State s = new State();
 				TFrame t = new TFrame(s);
@@ -389,7 +391,7 @@ public class PlayerSkeletonDaphne {
 			}
 		}
 		setCurrentWeights(weights);
-		
+		*/
 		
 		double weight = rand.nextInt(1000000)/1000000.0;
 		
@@ -400,7 +402,7 @@ public class PlayerSkeletonDaphne {
 		setCurrentWeights(weightNum,weight);
 		
 		//setCurrentWeights(1,weight);
-		*/
+		
 	}
 
 	//END OF implement this function to have a working system
