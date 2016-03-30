@@ -31,8 +31,8 @@ public class PlayerSkeletonDaphne {
 	private static Random rand = new Random();
 	
 	//magic strings and numbers
-	private static final int MAX_WEIGHTS_BOUNDARY = 100;
-	private static final int TOTAL_WEIGHT_PARAMETERS = 4;
+	private static final int MAX_WEIGHTS_BOUNDARY = 50;
+	private static final int TOTAL_WEIGHT_PARAMETERS = 15;
 	private static final int ROTATION = 0;
 	private static final int LOCATION = 1;
 	
@@ -125,6 +125,7 @@ public class PlayerSkeletonDaphne {
 					move[LOCATION] = j;
 					//holes = calculateHoles(field, s.getTop(), rows);
 				}
+				//System.out.println("rotation = " + i + " location = " + j + " : " + hueristic);
 			}
 		}
 
@@ -172,8 +173,42 @@ public class PlayerSkeletonDaphne {
 			case 4:
 				heuristic += currentWeights[index]*calculateMaxHeight(top);
 				break;
+			case 5:
+				heuristic += currentWeights[index]*calculateHeightForColumn(index%10, top);
+				break;
+			case 6:
+				heuristic += currentWeights[index]*calculateHeightForColumn(index%10, top);
+				break;
+			case 7:
+				heuristic += currentWeights[index]*calculateHeightForColumn(index%10, top);
+				break;
+			case 8:
+				heuristic += currentWeights[index]*calculateHeightForColumn(index%10, top);
+				break;
+			case 9:
+				heuristic += currentWeights[index]*calculateHeightForColumn(index%10, top);
+				break;
+			case 10:
+				heuristic += currentWeights[index]*calculateHeightForColumn(index%10, top);
+				break;
+			case 11:
+				heuristic += currentWeights[index]*calculateHeightForColumn(index%10, top);
+				break;
+			case 12:
+				heuristic += currentWeights[index]*calculateHeightForColumn(index%10, top);
+				break;
+			case 13:
+				heuristic += currentWeights[index]*calculateHeightForColumn(index%10, top);
+				break;
+			case 14:
+				heuristic += currentWeights[index]*calculateHeightForColumn(index%10, top);
+				break;
 		}
 		return heuristic;
+	}
+	
+	private double calculateHeightForColumn(int index, int[] top){
+		return top[index];
 	}
 	
 	private double calculateMaxHeight(int[] top) {
@@ -253,6 +288,7 @@ public class PlayerSkeletonDaphne {
 		for(int i=0; i<top.length-1; ++i){
 			total += Math.abs(top[i]-top[i+1]);
 		}
+		//System.out.println("bumpiness value = " + total);
 		return total;
 	}
 	
@@ -332,54 +368,8 @@ public class PlayerSkeletonDaphne {
 	}
 	
 	
-	public static void main(String[] args) {
-		PlayerSkeletonDaphne p = new PlayerSkeletonDaphne();
-		p.initializeFileRead();
-		p.initializeWeights();
-		p.closeFileIO();
-		while(true){
-			p.initializeFileRead();
-			p.initializeWeights();
-			
-			//p.randomizeWeights();
-			
-			for(int i=0; i<MAX_WEIGHTS_BOUNDARY; ++i){
-				State s = new State();
-				TFrame t = new TFrame(s);
-				p.resetCount();
-				
-				letsPlayGame(s, p);
-				p.setScoreHistory(i, s.getRowsCleared());
-				t.dispose(); //close the frame from accumulating
-			}
-			compareAndStoreResults(p);
-			System.out.println(numCycles + ": Average of " + MAX_WEIGHTS_BOUNDARY + " games = " + p.averageScore);
-			++numCycles;
-			storeWeights(p);
-			p.closeFileIO();
-		}
-	}
 
-	private static void letsPlayGame(State s, PlayerSkeletonDaphne p) {
-		while(!s.hasLost()) {
-			//reportState(s, s.legalMoves()); //for debugging?
-			int[] moves = p.pickMove(s,s.legalMoves());
 
-			//System.out.println("Piece = " + s.getNextPiece() + ", move " + p.getCount() + ": " + moves[0] + " " + moves[1]);
-			s.makeMove(moves);
-			s.draw();
-			s.drawNext(0,0);
-			p.incrementCount();
-			//p.printDoubleArray(s.getField());
-			//System.out.println("#Number of holes = " + p.holes);
-			try {
-				Thread.sleep(0);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		System.out.println("You have completed "+s.getRowsCleared()+" rows in " + p.getCount() + " turns.");
-	}
 	private void randomizeWeights() {
 		/*
 		int numWeights = currentWeights.length;
@@ -396,7 +386,9 @@ public class PlayerSkeletonDaphne {
 		double weight = rand.nextInt(1000000)/1000000.0;
 		
 		int weightNum = PlayerSkeletonDaphne.numCycles%TOTAL_WEIGHT_PARAMETERS;
-		if(weightNum != 1){
+		if(weightNum != 1 && weightNum < 5){
+			weight = -weight;
+		}else if(weightNum > 4 && rand.nextInt(2) == 1){
 			weight = -weight;
 		}
 		setCurrentWeights(weightNum,weight);
@@ -516,109 +508,53 @@ public class PlayerSkeletonDaphne {
 		System.out.println();
 	}
 	
-	/**
-	 * Debugging printing @@author: Ruo Fan
-	 * @param s
-	 * @param legalMoves
-	 */
-	public static void reportState(State s, int[][] legalMoves){
-		int[][] pWidth = State.getpWidth();
-		int[][] pHeight = State.getpHeight();
-		int[][][] pBottom = State.getpBottom();
-		int[][][] pTop = State.getpTop();
-		int turn = s.getTurnNumber();
-		int piece = s.getNextPiece();
-		
-		if (!s.hasLost()) {
-			System.out.println("-------------- Turn " + turn + " --------------");
-			System.out.println("Next Piece: " + piece);
+	public static void main(String[] args) {
+		PlayerSkeletonDaphne p = new PlayerSkeletonDaphne();
+		p.initializeFileRead();
+		p.initializeWeights();
+		p.closeFileIO();
+		while(true){
+			p.initializeFileRead();
+			p.initializeWeights();
 			
-			//Prints out the next piece
-			for(int i = pHeight[piece][0]-1; i >= 0; i--) {
-				for(int j = 0; j < pWidth[piece][0]; j++) {
-					if (pBottom[piece][0][j] < (i+1) && pTop[piece][0][j] >= (i+1)) {
-						turn = turn%100;
-						if ((turn+1) < 10) {
-							System.out.print("0");
-						}
-						System.out.print((turn+1) + " ");
-					} else {
-						System.out.print("   ");
-					}
-				}
-				System.out.println("");
+			p.randomizeWeights();
+			
+			for(int i=0; i<MAX_WEIGHTS_BOUNDARY; ++i){
+				State s = new State();
+				//TFrame t = new TFrame(s);
+				p.resetCount();
+				
+				letsPlayGame(s, p);
+				p.setScoreHistory(i, s.getRowsCleared());
+				//t.dispose(); //close the frame from accumulating
 			}
-			System.out.println("");
-		} else {
-			System.out.println("-------- Game Over! --------");
+			compareAndStoreResults(p);
+			System.out.print("Modify weight #" + numCycles%TOTAL_WEIGHT_PARAMETERS + " ");
+			System.out.println(numCycles + ": Average of " + MAX_WEIGHTS_BOUNDARY + " games = " + p.averageScore);
+			++numCycles;
+			storeWeights(p);
+			p.closeFileIO();
 		}
-		
-		/*Print out the playing field*/
-		int[][] field = s.getField();
-		System.out.println("Field:");
-		int val;
-		//Print the hidden row at the top (if any square of this row is occupied, means game over)
-		System.out.print("[ ");
-		for (int j = 0; j < field[field.length-1].length; j++) { //for each column
-			val = field[field.length-1][j]%100;
-			if (val == 0) {
-				System.out.print("XX "); //empty square
-			} else {
-				//occupied square (number represents the turn in which the piece is placed)
-				if (val < 10) {
-					System.out.print("0");
-				}
-				System.out.print(field[field.length-1][j] + " "); }
-		}
-		System.out.println("]  <--- Can't touch this");
-		//Print the rest of the playing field (all the visible rows)
-		for (int i = field.length-2; i >= 0; i--) { //for each row
-			System.out.print("[ ");
-			for (int j = 0; j < field[i].length; j++) { //for each column
-				val = field[i][j]%100;
-				if (val == 0) {
-					System.out.print("-- "); //empty square
-				} else {
-					//occupied square (number represents the turn in which the piece is placed)
-					if (val < 10) {
-						System.out.print("0");
-					}
-					System.out.print(val + " "); 
-				}
+	}
+	
+	private static void letsPlayGame(State s, PlayerSkeletonDaphne p) {
+		while(!s.hasLost()) {
+			//reportState(s, s.legalMoves()); //for debugging?
+			int[] moves = p.pickMove(s,s.legalMoves());
+
+			//System.out.println("Piece = " + s.getNextPiece() + ", move " + p.getCount() + ": " + moves[0] + " " + moves[1]);
+			s.makeMove(moves);
+			//s.draw();
+			//s.drawNext(0,0);
+			p.incrementCount();
+			//p.printDoubleArray(s.getField());
+			//System.out.println("#Number of holes = " + p.holes);
+			try {
+				Thread.sleep(0);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
-			System.out.println("]");
 		}
-		
-		//Print the 'top' (column height) of each column
-		int top[] = s.getTop();
-		System.out.println("---------------------------------");
-		System.out.print("[ ");
-		for (int i = 0; i < top.length; i++) {
-			if (top[i] < 10) {
-				System.out.print("0");
-			}
-			System.out.print(top[i] + " ");
-		}
-		System.out.print("]  <--- Column heights");
-		
-		if (!s.hasLost()) {
-			//Print the legal moves
-			System.out.println("\n\nLegal Moves: ");
-			int orient = 0;
-			System.out.print("Orientation " + (orient+1) + ": [");
-			for (int i = 0; i < legalMoves.length; i++) {
-				int slot;
-				if (legalMoves[i][0] != orient) {
-					orient = legalMoves[i][0];
-					System.out.print("]\nOrientation " + (orient+1) + ": [");
-				} else if (i != 0){
-					System.out.print(", ");
-				}
-				slot = legalMoves[i][1]+1;
-				System.out.print(slot);
-			}
-			System.out.print("]");
-		}
-		System.out.print("\n\n\n");
+		//System.out.println("You have completed "+s.getRowsCleared()+" rows in " + p.getCount() + " turns.");
 	}
 }
