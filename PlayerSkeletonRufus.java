@@ -13,6 +13,8 @@ import java.util.Random;
 
 public class PlayerSkeletonRufus {
 	
+	public static boolean print = false;
+	
 	/**
 	 * Simulates what a state will be like after making a legal move
 	 */
@@ -149,7 +151,9 @@ public class PlayerSkeletonRufus {
 	 */
 	public int pickMove(State s, int[][] legalMoves, double[] weights) {
 		
-		printLegalMoves(legalMoves);
+		if (print) {
+			printLegalMoves(legalMoves);
+		}
 		int bestMove = computeScores(s, legalMoves, weights);
 		
 		return bestMove;
@@ -295,8 +299,10 @@ public class PlayerSkeletonRufus {
 				}
 			}
 			
-			orient = printScores(legalMoves, nextState, heightSum, holeScore,
-					 bumpiness, score, maxHeightSum, orient, i);
+			if (print) {
+				orient = printScores(legalMoves, nextState, heightSum, holeScore,
+						 bumpiness, score, maxHeightSum, orient, i);
+			}
 		}
 
 		int bestMove;
@@ -307,8 +313,10 @@ public class PlayerSkeletonRufus {
 			bestMove = lowestScoreMoves.get(0);
 		}
 		
-		printMoves(legalMoves, lowestScoreMoves, lowestScore, bestMove);
-	
+		if (print){
+			printMoves(legalMoves, lowestScoreMoves, lowestScore, bestMove);
+		}
+		
 		return bestMove;
 	}
 
@@ -588,6 +596,7 @@ public class PlayerSkeletonRufus {
 	/*public static void main(String[] args) {
 		ArrayList<Integer> gameScores = new ArrayList<Integer>();
 		int numberOfGames = 15;
+		print = false;
 		
 		double[] weights = {57, 27.5, 11, 4.5};
 		
@@ -606,7 +615,7 @@ public class PlayerSkeletonRufus {
 		
 		for (int i = 0; i < numberOfGames; i++) {
 			State s = new State();
-			PlayerSkeleton p = new PlayerSkeleton();
+			PlayerSkeletonRufus p = new PlayerSkeletonRufus();
 			
 			while(!s.hasLost()) {
 				s.makeMove(p.pickMove(s, s.legalMoves(), weights));
@@ -626,7 +635,8 @@ public class PlayerSkeletonRufus {
 			Date date = new Date();
 			
 			File output = new File("fitness" + (int)Math.round((weights[0]*1000)) + "-" + (int)Math.round((weights[1]*1000)) + "-" 
-			+ (int)Math.round((weights[2]*1000)) + "-" + (int)Math.round((weights[3]*1000))  + "__" + (int)(scoreSum / numberOfGames) + "__" + daf.format(date));
+			+ (int)Math.round((weights[2]*1000)) + "-" + (int)Math.round((weights[3]*1000))  + "__" + (int)(scoreSum / numberOfGames) + "__" 
+			+ daf.format(date) + ".txt");
 			
 			FileOutputStream fos = new FileOutputStream(output);
 			BufferedOutputStream bos = new BufferedOutputStream(fos);
@@ -658,6 +668,7 @@ public class PlayerSkeletonRufus {
 		State s = new State();
 		new TFrame(s);
 		PlayerSkeletonRufus p = new PlayerSkeletonRufus();
+		print = true;
 		
 		double[] weights = {57, 27.5, 11, 4.5};
 		
@@ -703,9 +714,9 @@ public class PlayerSkeletonRufus {
 			DateFormat daf = new SimpleDateFormat("ddMMM__HH-mm-ss");
 			Date date = new Date();
 			
-			File outputRenamed = new File((int)Math.round((weights[0]*100)) + "-" + (int)Math.round((weights[1]*100)) 
+			File outputRenamed = new File("output" + (int)Math.round((weights[0]*100)) + "-" + (int)Math.round((weights[1]*100)) 
 			+ "-" + (int)Math.round((weights[2]*100)) + "-" + (int)Math.round((weights[3]*100)) + "__" + s.getRowsCleared()
-			+ "__" + daf.format(date));
+			+ "__" + daf.format(date) + ".txt");
 			output.renameTo(outputRenamed);
 			
 		} catch (Exception e) {
