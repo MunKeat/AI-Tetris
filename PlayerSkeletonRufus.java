@@ -657,7 +657,7 @@ public class PlayerSkeletonRufus {
 	public static void main(String[] args) {
 		State s = new State();
 		new TFrame(s);
-		PlayerSkeleton p = new PlayerSkeleton();
+		PlayerSkeletonRufus p = new PlayerSkeletonRufus();
 		
 		double[] weights = {57, 27.5, 11, 4.5};
 		
