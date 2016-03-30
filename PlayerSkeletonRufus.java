@@ -7,177 +7,11 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Random;
 
 
 public class PlayerSkeletonRufus {
-	
-	/**
-	 * Just pick a random move!
-	 */
-	public int pickRandomMove(State s, int[][] legalMoves) {
-		Random rand = new Random();
-		int nextMove = rand.nextInt(legalMoves.length); 
-		System.out.println("Pick Move: Orientation " + (legalMoves[nextMove][0]+1) + ", Slot " + (legalMoves[nextMove][1]+1) + "\n\n");
-		return nextMove;
-	}
-	
-	/**
-	 * Picks the best next move by finding a move that gives the lowest column height sum in the next state
-	 */
-	public int pickMove(State s, int[][] legalMoves) {
-		System.out.println("Searching for best move...");
-		
-		//////*Prints out the legal moves for the next piece*//////
-		System.out.println("\nLegal Moves: ");
-		
-		//Each legal move is represented by (orientation, slot)
-		int orient = -1; //orientation of current legal move
-		int slot = -1; //slot of current legal move
-		
-		/*Iterate through legalMoves, which is ordered by orientation, then slot.*/
-		for (int i = 0; i < legalMoves.length; i++) {
-			
-			if (legalMoves[i][State.ORIENT] != orient) { //check if orientation of current legal move is different from previous
-				orient = legalMoves[i][State.ORIENT];
-				if (i != 0) {
-					System.out.print("]\n");
-				}
-				System.out.print("Orientation " + (orient+1) + ": [");
-				
-			} else if (i != 0){
-				System.out.print(", ");
-			}
-			
-			slot = legalMoves[i][State.SLOT];
-			System.out.print((slot+1));
-		}
-		System.out.println("]");
-		///////////////////////////////////////////////////////////
-		
-		
-		////////*Finds the best move based on heuristic*////////
-		System.out.print("\nScores:");
-		
-		/*Initializes data for the next state*/
-		State nextState;
-		int[] top;
-		int[][] field;
-		int heightSum = 0;
-		int holes = 0;
-		int bumpiness = 0;
-		double score = 0;
-		
-		ArrayList<Double> scores = new ArrayList<Double>();
-		ArrayList<Integer> maxHeights = new ArrayList<Integer>(); //tiebreaker
-		orient = -1; //orientation of current legal move
-		slot = -1; //slot of current legal move
-		
-		/*For each possible next state, calculate its score based on heuristic*/
-		for (int i = 0; i < legalMoves.length; i++) {
-			
-			nextState = new FutureState(s);
-			nextState.makeMove(i);
-			
-			if (nextState.hasLost()) {
-				scores.add(Double.MAX_VALUE);
-				maxHeights.add(Integer.MAX_VALUE);
-				
-			} else {
-				top = nextState.getTop();
-				field = nextState.getField();
-				heightSum = 0;
-				holes = 0;
-				bumpiness = 0;
-				int maxHeight = 0;
-				
-				for (int j = 0; j < top.length; j++) {
-					heightSum += top[j];
-					
-					if (j != top.length-1) {
-						bumpiness += Math.abs(top[j+1] - top[j]);
-					}
-					
-					for (int k = top[j]-2; k >= 0; k--) {
-						if (field[k][j] == 0) {
-							holes++;
-						}
-					}
-					
-					if (top[j] > maxHeight) {
-						maxHeight = top[j];
-					}
-					
-				}		
-				
-				score = (0.55)*heightSum + (0.2)*holes + (0.25)*bumpiness;
-				scores.add(score);
-				maxHeights.add(maxHeight);
-			}
-			
-			/*Prints out the score details of each possible next state*/
-			if (legalMoves[i][State.ORIENT] != orient) { //check if orientation of current legal move is different from previous
-				orient = legalMoves[i][State.ORIENT];
-				System.out.print("\nOrientation " + (orient+1) + ": ");
-			} else if (i != 0){
-				System.out.print(", ");
-			}
-			slot = legalMoves[i][State.SLOT];
-			System.out.print((slot+1));
-			
-			if (nextState.hasLost()) {
-				System.out.print("[-1]");
-			} else {
-				DecimalFormat df = new DecimalFormat("#.00"); 
-				System.out.print("[" + df.format(score) + "](" + heightSum + "/" + holes + "/" + bumpiness + ")");
-			}
-		}
-		////////////////////////////////////////////////////////
-		
-		
-		//////////*Determine the best best move out of the all the best moves found (tie-breaker)*//////////
-		ArrayList<Integer> bestMoves = new ArrayList<Integer>();
-		double bestScore = Double.MAX_VALUE;
-		for (int i = 0; i < scores.size(); i++) {
-			if (scores.get(i) <= bestScore) {
-				if (scores.get(i) < bestScore) {
-					bestMoves.clear();
-					bestScore = scores.get(i);
-				}
-				bestMoves.add(i);
-			}
-		}
-		
-		int bestMove = 0;
-		if (bestMoves.size() == 1) {
-			if (bestScore == Integer.MAX_VALUE) {
-				bestScore = -1;
-			}
-			bestMove = bestMoves.get(0);
-			
-		} else {
-			System.out.print("\nMax Height:");
-			int lowestMaxHeight = Integer.MAX_VALUE;
-			
-			for (int i = 0; i < bestMoves.size(); i++) {
-				int move = bestMoves.get(i);
-				int maxHeight = maxHeights.get(move);
-				System.out.print("\n" + (legalMoves[move][State.ORIENT]+1) + "," + (legalMoves[move][State.SLOT]+1) + ": " + maxHeight);
-				
-				if (maxHeight < lowestMaxHeight) {
-					lowestMaxHeight = maxHeight;
-					bestMove = move;
-				}
-			}
-		}
-
-		System.out.println("\n\nBest Move: Orientation " + (legalMoves[bestMove][State.ORIENT]+1) + ", Slot " 
-		+ (legalMoves[bestMove][State.SLOT]+1) + " (Score = " + bestScore + ")\n\n");
-		///////////////////////////////////////////////////////////////////////////////////////////////////
-		
-		return bestMove;
-	}
-	
 	
 	/**
 	 * Simulates what a state will be like after making a legal move
@@ -258,7 +92,7 @@ public class PlayerSkeletonRufus {
 			for(int i = 0; i < pWidth[piece][orient]; i++) {
 				//from bottom to top of brick
 				for(int h = height+pBottom[piece][orient][i]; h < height+pTop[piece][orient][i]; h++) {
-					field[h][i+slot] = this.squareValue;
+					field[h][i+slot] = squareValue;
 				}
 			}
 			
@@ -281,7 +115,7 @@ public class PlayerSkeletonRufus {
 				if(full) {
 					//for each column
 					for(int c = 0; c < COLS; c++) {
-
+	
 						//slide down all bricks
 						for(int i = r; i < top[c]; i++) {
 							field[i][c] = field[i+1][c];
@@ -296,12 +130,284 @@ public class PlayerSkeletonRufus {
 		}
 		////////////////////////////////////////////////////////
 	}
+
+
+
+
+	/**
+	 * Just pick a random move!
+	 */
+	public int pickRandomMove(State s, int[][] legalMoves) {
+		Random rand = new Random();
+		int nextMove = rand.nextInt(legalMoves.length); 
+		System.out.println("Pick Move: Orientation " + (legalMoves[nextMove][0]+1) + ", Slot " + (legalMoves[nextMove][1]+1) + "\n\n");
+		return nextMove;
+	}
+	
+	/**
+	 * Picks the best next move by finding a move that gives the lowest column height sum in the next state
+	 */
+	public int pickMove(State s, int[][] legalMoves, double[] weights) {
+		
+		printLegalMoves(legalMoves);
+		int bestMove = computeScores(s, legalMoves, weights);
+		
+		return bestMove;
+	}
+
+	/**
+	 * Prints out the legal moves for the next piece
+	 */
+	private void printLegalMoves(int[][] legalMoves) {
+		System.out.println("Legal Moves: ");
+		
+		/*Each legal move is represented by (orientation, slot)*/
+		int orient = -1; //orientation of current legal move
+		int slot = -1; //slot of current legal move
+		
+		/*Iterate through legalMoves, which is ordered by orientation, then slot.*/
+		for (int i = 0; i < legalMoves.length; i++) {
+			
+			if (legalMoves[i][State.ORIENT] != orient) { //check if orientation of current legal move is different from previous
+				orient = legalMoves[i][State.ORIENT];
+				if (i != 0) {
+					System.out.print("]\n");
+				}
+				System.out.print("Orientation " + (orient+1) + ": [");
+				
+			} else if (i != 0){
+				System.out.print(", ");
+			}
+			
+			slot = legalMoves[i][State.SLOT];
+			System.out.print((slot+1));
+		}
+		System.out.println("]");
+		System.out.print("\nScores:");
+	}
+
+	/**
+	 * Compute the score of each legal move (possible next state) 
+	 * using the heuristics: column height sum, hole score, bumpiness, and max height score.
+	 * And find the best move which has the lowest score
+	 * @return best move
+	 */
+	private int computeScores(State s, int[][] legalMoves, double[] weights){
+		
+		/*Initializes data for the next state*/
+		State nextState;
+		int[] top;
+		int[][] field;
+		
+		ArrayList<Double> scores = new ArrayList<Double>(); //lower the score the better
+		ArrayList<Integer> lowestScoreMoves = new ArrayList<Integer>();
+		double lowestScore = Double.MAX_VALUE;
+		
+		int heightSum = 0;
+		int holeScore = 0;
+		int bumpiness = 0;
+		ArrayList<Integer> heights = new ArrayList<Integer>();
+		int maxHeightSum = 0;
+		double score = 0;
+		
+		int orient = -1; //orientation of current legal move
+		
+		for (int i = 0; i < legalMoves.length; i++) {
+			
+			/*Compute the score of each legal move*/
+			nextState = new FutureState(s);
+			nextState.makeMove(i);
+			heights.clear();
+			
+			if (nextState.hasLost()) {
+				scores.add(Double.MAX_VALUE);
+				
+			} else {
+				top = nextState.getTop();
+				field = nextState.getField();
+				heightSum = 0;
+				holeScore = 0;
+				bumpiness = 0;
+				
+				for (int j = 0; j < top.length; j++) {
+					heightSum += top[j];
+					
+					int k = 0;
+					int holeLength;
+					while (k <= top[j]-2){
+						holeLength = 1;
+						if (field[k][j] == 0) {
+							for (int m = k+1; m < field.length; m++) {
+								if (field[m][j] == 0) {
+									holeLength++;
+								} else {
+									break;
+								}
+							}
+							holeScore += Math.pow(2, holeLength-1); //holeScore increases exponentially with length of hole
+						}
+						k += holeLength;
+					}
+					
+					if (j < top.length-1) {
+						int diff = Math.abs(top[j+1] - top[j]);
+						if (diff >= 3 && j > 0) {
+							if (top[j+1] > top[j] && top[j-1] > top[j] && Math.abs(top[j-1] - top[j]) >= 3){
+								bumpiness += Math.pow(2, diff-1); //gives more weight to deep well (weight increases exponentially)
+							} else if (j < top.length - 2) {
+								if (top[j+1] < top[j] && top[j+1] < top[j+2] && Math.abs(top[j+2] - top[j+1]) >= 3){
+									bumpiness += Math.pow(2, diff-1); //gives more weight to deep well (weight increases exponentially)
+								} else {
+									bumpiness += diff;
+								}
+							} else {
+								bumpiness += diff;
+							}
+						} else {
+							bumpiness += diff;
+						}
+					}
+					
+					heights.add(top[j]);
+				}
+				
+				if (top[1] > top[0]) {
+					bumpiness += Math.pow(2, top[1] - top[0] - 1);
+				}
+				if (top[top.length-2] > top[top.length-1]) {
+					bumpiness += Math.pow(2, top[top.length-2] - top[top.length-1] - 1);
+				}
+				
+				Collections.sort(heights);
+				Collections.reverse(heights);
+				maxHeightSum = heights.get(0) + heights.get(1) + heights.get(2);
+				
+				score = weights[0]*heightSum + weights[1]*holeScore + weights[2]*bumpiness + weights[3]*maxHeightSum;
+				scores.add(score);
+				
+				/*Find the move(s) that has the lowest score*/
+				if (score <= lowestScore) {
+					if (score < lowestScore) {
+						lowestScore = score;
+						lowestScoreMoves.clear();
+					}
+					lowestScoreMoves.add(i);
+				}
+			}
+			
+			orient = printScores(legalMoves, nextState, heightSum, holeScore,
+					 bumpiness, score, maxHeightSum, orient, i);
+		}
+
+		int bestMove;
+		if (lowestScore == Double.MAX_VALUE) {
+			lowestScore = -1;
+			bestMove = 0;
+		} else {
+			bestMove = lowestScoreMoves.get(0);
+		}
+		
+		printMoves(legalMoves, lowestScoreMoves, lowestScore, bestMove);
+	
+		return bestMove;
+	}
+
+	private int printScores(int[][] legalMoves, State nextState, int heightSum,
+			                int holeScore, int bumpiness, double score, int maxHeightSum, 
+			                int orient, int i) {
+		
+		//check if orientation of current legal move is different from previous
+		if (legalMoves[i][State.ORIENT] != orient) { 
+			orient = legalMoves[i][State.ORIENT];
+			System.out.print("\nOrientation " + (orient+1) + ": "); //if yes, print orientation
+		} else if (i != 0){
+			System.out.print(", ");
+		}
+		
+		//Print slot
+		int slot = legalMoves[i][State.SLOT];
+		System.out.print((slot+1));
+		
+		//Print score & details
+		if (nextState.hasLost()) {
+			System.out.print("[-1]");
+		} else {
+			DecimalFormat df = new DecimalFormat("#.00"); 
+			System.out.print("[" + df.format(score) + "](" + heightSum + "/" + holeScore + "/" + bumpiness + "/" + maxHeightSum + ")");
+		}
+		
+		return orient;
+	}
+
+	private void printMoves(int[][] legalMoves, ArrayList<Integer> lowestScoreMoves, double lowestScore, int bestMove) {
+		
+		if (lowestScoreMoves.size() > 1) {
+			/*Prints out all the moves with the lowest score*/
+			System.out.print("\n\nTied moves:");
+			for (int i = 0; i < lowestScoreMoves.size(); i++) {
+				int move = lowestScoreMoves.get(i);
+				System.out.print("\n" + (legalMoves[move][State.ORIENT]+1) + "," + (legalMoves[move][State.SLOT]+1));
+			}
+		}
+
+		/*Prints out the best move*/
+		System.out.println("\n\nBest Move: Orientation " + (legalMoves[bestMove][State.ORIENT]+1) + ", Slot " 
+		+ (legalMoves[bestMove][State.SLOT]+1) + " (Score = " + lowestScore + ")\n\n");
+	}
+
+	
 	
 	
 	/**
 	 * Report the state of the current turn
 	 */
 	public static void reportState(State s, int[][] legalMoves){
+		
+		printTurn(s);
+		
+		if (!s.hasLost()) {
+			printRowsCleared(s);
+			printNextPiece(s);
+		}
+		
+		int holes = analyzeField(s);
+		int[] heightResult = analyzeColumnHeights(s);
+		int heightSum = heightResult[0];
+		int maxHeightScore = heightResult[1];
+		int bumpiness = analyzeBumpiness(s);
+		
+		/*Prints out the attributes used in the heuristic*/
+		System.out.println("\nColumn Heights Sum = " + heightSum);
+		System.out.println("Number of holes = " + holes);
+		System.out.println("Bumpiness = " + bumpiness);
+		System.out.println("Max Height Score = " + maxHeightScore + "\n");
+		
+	}
+
+	/**
+	 * Prints out the turn number
+	 */
+	private static void printTurn(State s) {
+		if (s.hasLost()) {
+			System.out.println("-------- Game Over! --------\n");
+		} else {
+			int turn = s.getTurnNumber();
+			System.out.println("-------------- Turn " + turn + " --------------");
+		}
+	}
+	
+	/**
+	 * Prints out the number of rows cleared
+	 */
+	private static void printRowsCleared(State s) {
+		System.out.println("\nRows cleared = " + s.getRowsCleared());
+	}
+	
+	/**
+	 * Prints out the ID and shape of the next piece
+	 */
+	private static void printNextPiece(State s) {
+		
 		//[pieceID][orientation]
 		int[][] pWidth = State.getpWidth(); //width of the piece
 		int[][] pHeight = State.getpHeight(); //height of the piece
@@ -310,55 +416,47 @@ public class PlayerSkeletonRufus {
 		int[][][] pBottom = State.getpBottom(); //row number of the square below the bottom-most filled square in that column
 		int[][][] pTop = State.getpTop(); //row number of the top-most filled square in that column
 		
-		//[row][column]
-		int[][] field = s.getField();
-		
-		//[column]
-		int top[] = s.getTop(); //the height of the highest filled square of that column
-		
-		int turn = s.getTurnNumber();
 		int piece = s.getNextPiece();
-		int rowsCleared = s.getRowsCleared();
+		int turn = s.getTurnNumber();
 		
-		if (s.hasLost()) {
-			System.out.println("-------- Game Over! --------\n");
-		} else {
-			System.out.println("-------------- Turn " + turn + " --------------");
-			
-			/////////*Prints out the number of rows cleared*/////////
-			System.out.println("\nRows cleared = " + rowsCleared);
-			/////////////////////////////////////////////////////////
-			
-			
-			////////*Prints out the next piece*////////
-			System.out.println("\nNext Piece = " + piece);
-			int orient = 0;
-			int squareValue = 0; //value that represents the piece's squares in the field
-			
-			for(int i = pHeight[piece][orient]; i > 0; i--) { //for each row of the piece, from top to bottom
-				for(int j = 0; j < pWidth[piece][orient]; j++) { //for each column of the piece, from left to right
-					
-					if (pBottom[piece][orient][j] < i && pTop[piece][orient][j] >= i) { 
-						squareValue = (turn+1) % 100; //squareValue is based on next turn number, limited to 2 digits
-						if (squareValue < 10) {
-							System.out.print("0");
-						}
-						System.out.print(squareValue + " "); //filled square
-					
-					} else { 
-						System.out.print("   "); //empty square
+		/*Prints out the ID*/
+		System.out.println("\nNext Piece = " + piece);
+		
+		/*Prints out the shape*/
+		int orient = 0;
+		int squareValue = 0; //value that represents the piece's squares in the field
+		
+		for(int i = pHeight[piece][orient]; i > 0; i--) { //for each row of the piece, from top to bottom
+			for(int j = 0; j < pWidth[piece][orient]; j++) { //for each column of the piece, from left to right
+				
+				if (pBottom[piece][orient][j] < i && pTop[piece][orient][j] >= i) { 
+					squareValue = (turn+1) % 100; //squareValue is based on next turn number, limited to 2 digits
+					if (squareValue < 10) {
+						System.out.print("0");
 					}
-					
+					System.out.print(squareValue + " "); //filled square
+				
+				} else { 
+					System.out.print("   "); //empty square
 				}
-				System.out.println("");
+				
 			}
 			System.out.println("");
-			///////////////////////////////////////////
 		}
+		System.out.println("");
 		
+	}
+
+	/**
+	 * Analyzes and prints out the playing field
+	 * @return the number of holes
+	 */
+	private static int analyzeField(State s) {
 		
-		/////////*Prints out the playing field, and counts the number of holes*/////////
-		int holes = 0; //a hole is an empty square that has a filled square somewhere above it
+		//[row][column]
+		int[][] field = s.getField();
+		//[column]
+		int top[] = s.getTop(); //the height of the highest filled square of that column
 		
 		System.out.println("  1  2  3  4  5  6  7  8  9  10");
 		System.out.println("---------------------------------");
@@ -381,6 +479,8 @@ public class PlayerSkeletonRufus {
 		System.out.println("]  <--- Can't touch this");
 		
 		/*Prints the rest of the playing field*/
+		int holes = 0; //a hole is an empty square that has a filled square somewhere above it
+		
 		for (int i = field.length-2; i >= 0; i--) {
 			System.out.print("[ ");
 			
@@ -405,46 +505,171 @@ public class PlayerSkeletonRufus {
 			
 			System.out.println("]");
 		}
-		////////////////////////////////////////////////////////////////////////////////
 		
+		return holes;
 		
-		//////*Prints out the height of each column*//////
+	}
+
+	/**
+	 * Analyzes and prints out the column height of each column
+	 * @return the sum of all column heights
+	 */
+	private static int[] analyzeColumnHeights(State s) {
+		int[] top = s.getTop();
 		System.out.println("---------------------------------");
 		System.out.print("[ ");
 		
+		ArrayList<Integer> heights = new ArrayList<Integer>();
 		int heightSum = 0; //sum of column heights
-		int bumpiness = 0;
-		int height;
-		
-		for (int i = 0; i < top.length-1; i++) {
-			height = top[i];
+		for (int i = 0; i < top.length; i++) {
+			int height = top[i];
 			if (height < 10) {
 				System.out.print("0");
 			}
+			
+			heights.add(height);
 			heightSum += height;
 			System.out.print(height + " ");
-			
-			bumpiness += Math.abs(top[i+1] - top[i]);
 		}
-		heightSum += top[top.length-1];
 		
-		System.out.println("---------------------------------");
-		System.out.println("  1  2  3  4  5  6  7  8  9  10");
-		//////////////////////////////////////////////////
+		System.out.println("\n---------------------------------");
+		System.out.println("  1  2  3  4  5  6  7  8  9  10 ]");
 		
+		Collections.sort(heights);
+		Collections.reverse(heights);
+		int maxHeightScore = heights.get(0) + heights.get(1) + heights.get(2);
 		
-		//////*Prints out the stats used in the heuristic*//////
-		System.out.println("\nColumn Heights Sum = " + heightSum);
-		System.out.println("Number of holes = " + holes);
-		System.out.println("Bumpiness = " + bumpiness + "\n");
-		////////////////////////////////////////////
+		int[] result = {heightSum, maxHeightScore};
+		return result;
 	}
+
+	/**
+	 * Analyzes the bumpiness of the current state
+	 * @return bumpiness
+	 */
+	private static int analyzeBumpiness(State s) {
+		int[] top = s.getTop();
+		int bumpiness = 0;
+		for (int i = 0; i < top.length -1; i++) {
+			int diff = Math.abs(top[i+1] - top[i]);
+			if (diff >= 3 && i > 0) {
+				if (top[i+1] > top[i] && top[i-1] > top[i] && Math.abs(top[i-1] - top[i]) >= 3){
+					bumpiness += Math.pow(2, diff - 1); //gives more weight to deep well (weight increases exponentially)
+				} else if (i < top.length - 2) {
+					if (top[i+1] < top[i] && top[i+1] < top[i+2] && Math.abs(top[i+2] - top[i+1]) >= 3){
+						bumpiness += Math.pow(2, diff-1); //gives more weight to deep well (weight increases exponentially)
+					} else {
+						bumpiness += diff;
+					}
+				} else {
+					bumpiness += diff;
+				}
+			} else {
+				bumpiness += diff;
+			}
+		}
+		
+		if (top[1] > top[0]) {
+			bumpiness += Math.pow(2, top[1] - top[0]) - 1;
+		}
+		if (top[top.length-2] > top[top.length-1]) {
+			bumpiness += Math.pow(2, top[top.length-2] - top[top.length-1] - 1);
+		}
+		
+		return bumpiness;
+	}
+
 	
 	
+	/**
+	 * Use this main method if you just want to run the game multiple times and get the number of rows cleared
+	 * without drawing and saving the game states to file
+	 */
+	/*public static void main(String[] args) {
+		ArrayList<Integer> gameScores = new ArrayList<Integer>();
+		int numberOfGames = 15;
+		
+		double[] weights = {57, 27.5, 11, 4.5};
+		
+		double weightSum = 0;
+		DecimalFormat df = new DecimalFormat("0.000");
+		for (int j = 0; j < weights.length; j++) {
+			weightSum += weights[j];
+		}
+		for (int j = 0; j < weights.length; j++) {
+			weights[j] = weights[j] / weightSum;  
+		}
+		
+		System.out.println("Weights: " + df.format(weights[0]) + ", " + df.format(weights[1]) + ", " 
+				+ df.format(weights[2]) + ", " + df.format(weights[3]));
+		System.out.println("\nRows Cleared: ");
+		
+		for (int i = 0; i < numberOfGames; i++) {
+			State s = new State();
+			PlayerSkeleton p = new PlayerSkeleton();
+			
+			while(!s.hasLost()) {
+				s.makeMove(p.pickMove(s, s.legalMoves(), weights));
+			}
+			System.out.println("Game " + (i+1) + ": " + s.getRowsCleared());
+			gameScores.add(s.getRowsCleared());
+		}
+		
+		double scoreSum = 0;
+		for (int i = 0; i < gameScores.size(); i++) {
+			scoreSum += gameScores.get(i);
+		} 
+		System.out.println("\nAverage Score: " + df.format((scoreSum / numberOfGames)) );
+		
+		try {
+			DateFormat daf = new SimpleDateFormat("ddMMM__HH-mm-ss");
+			Date date = new Date();
+			
+			File output = new File("fitness" + (int)Math.round((weights[0]*1000)) + "-" + (int)Math.round((weights[1]*1000)) + "-" 
+			+ (int)Math.round((weights[2]*1000)) + "-" + (int)Math.round((weights[3]*1000))  + "__" + (int)(scoreSum / numberOfGames) + "__" + daf.format(date));
+			
+			FileOutputStream fos = new FileOutputStream(output);
+			BufferedOutputStream bos = new BufferedOutputStream(fos);
+			PrintStream ps = new PrintStream(bos);
+			System.setOut(ps);
+			
+			System.out.println("Weights: " + df.format(weights[0]) + ", " + df.format(weights[1]) + ", " 
+					+ df.format(weights[2]) + ", " + df.format(weights[3]));
+			System.out.println("\nRows Cleared: ");
+			for (int i = 0; i < gameScores.size(); i++) {
+				System.out.println("Game " + (i+1) + ": " + gameScores.get(i));
+			}
+			System.out.println("\nAverage Score: " + df.format((scoreSum / numberOfGames)) );
+			
+			ps.close();
+			bos.close();
+			fos.close();
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}*/
+	
+	/**
+	 * Use this main method if you want to write the states of the game to an output file
+	 * and see the game being drawn out
+	 */
 	public static void main(String[] args) {
 		State s = new State();
 		new TFrame(s);
 		PlayerSkeleton p = new PlayerSkeleton();
+		
+		double[] weights = {57, 27.5, 11, 4.5};
+		
+		double weightSum = 0;
+		DecimalFormat df = new DecimalFormat("0.000");
+		for (int j = 0; j < weights.length; j++) {
+			weightSum += weights[j];
+		}
+		
+		for (int j = 0; j < weights.length; j++) {
+			weights[j] = weights[j] / weightSum;  
+		}
 		
 		try {
 			File output = new File("output.txt");
@@ -453,16 +678,19 @@ public class PlayerSkeletonRufus {
 			PrintStream ps = new PrintStream(bos);
 			System.setOut(ps);
 			
+			System.out.println("Weights: " + df.format(weights[0]) + ", " + df.format(weights[1]) + ", " 
+					+ df.format(weights[2]) + ", " + df.format(weights[3]) + "\n");
+			
 			while(!s.hasLost()) {
 				reportState(s, s.legalMoves());
-				s.makeMove(p.pickMove(s,s.legalMoves()));
+				s.makeMove(p.pickMove(s, s.legalMoves(), weights));
 				s.draw();
 				s.drawNext(0,0);
-				try {
-					Thread.sleep(10);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+				//try {
+					//Thread.sleep(1);
+				//} catch (InterruptedException e) {
+					//e.printStackTrace();
+				//}
 			}
 			
 			reportState(s, s.legalMoves());
@@ -472,15 +700,12 @@ public class PlayerSkeletonRufus {
 			bos.close();
 			fos.close();
 			
-			DateFormat df = new SimpleDateFormat("ddMMyyHHmmss");
+			DateFormat daf = new SimpleDateFormat("ddMMM__HH-mm-ss");
 			Date date = new Date();
 			
-			File outputRenamed;
-			if (s.getRowsCleared() < 100) {
-				outputRenamed = new File("output0" + s.getRowsCleared() + "_" + df.format(date) + ".txt");
-			} else {
-				outputRenamed = new File("output" + s.getRowsCleared() + "_" + df.format(date) + ".txt");
-			}
+			File outputRenamed = new File((int)Math.round((weights[0]*100)) + "-" + (int)Math.round((weights[1]*100)) 
+			+ "-" + (int)Math.round((weights[2]*100)) + "-" + (int)Math.round((weights[3]*100)) + "__" + s.getRowsCleared()
+			+ "__" + daf.format(date));
 			output.renameTo(outputRenamed);
 			
 		} catch (Exception e) {
