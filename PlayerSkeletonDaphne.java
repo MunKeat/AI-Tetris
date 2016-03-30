@@ -31,7 +31,7 @@ public class PlayerSkeletonDaphne {
 	private static Random rand = new Random();
 	
 	//magic strings and numbers
-	private static final int MAX_WEIGHTS_BOUNDARY = 50;
+	private static final int MAX_WEIGHTS_BOUNDARY = 1000;
 	private static final int TOTAL_WEIGHT_PARAMETERS = 15;
 	private static final int ROTATION = 0;
 	private static final int LOCATION = 1;
@@ -384,13 +384,14 @@ public class PlayerSkeletonDaphne {
 		*/
 		
 		double weight = rand.nextInt(1000000)/1000000.0;
-		
 		int weightNum = PlayerSkeletonDaphne.numCycles%TOTAL_WEIGHT_PARAMETERS;
+		//int weightNum = 2;
 		if(weightNum != 1 && weightNum < 5){
 			weight = -weight;
 		}else if(weightNum > 4 && rand.nextInt(2) == 1){
 			weight = -weight;
 		}
+		//System.out.print("weight = " + weight + " ");
 		setCurrentWeights(weightNum,weight);
 		
 		//setCurrentWeights(1,weight);
@@ -517,19 +518,19 @@ public class PlayerSkeletonDaphne {
 			p.initializeFileRead();
 			p.initializeWeights();
 			
-			p.randomizeWeights();
+			//p.randomizeWeights();
 			
 			for(int i=0; i<MAX_WEIGHTS_BOUNDARY; ++i){
 				State s = new State();
-				//TFrame t = new TFrame(s);
+				TFrame t = new TFrame(s);
 				p.resetCount();
 				
 				letsPlayGame(s, p);
 				p.setScoreHistory(i, s.getRowsCleared());
-				//t.dispose(); //close the frame from accumulating
+				t.dispose(); //close the frame from accumulating
 			}
 			compareAndStoreResults(p);
-			System.out.print("Modify weight #" + numCycles%TOTAL_WEIGHT_PARAMETERS + " ");
+			//System.out.print("Modify weight #" + numCycles%TOTAL_WEIGHT_PARAMETERS + " ");
 			System.out.println(numCycles + ": Average of " + MAX_WEIGHTS_BOUNDARY + " games = " + p.averageScore);
 			++numCycles;
 			storeWeights(p);
@@ -544,8 +545,8 @@ public class PlayerSkeletonDaphne {
 
 			//System.out.println("Piece = " + s.getNextPiece() + ", move " + p.getCount() + ": " + moves[0] + " " + moves[1]);
 			s.makeMove(moves);
-			//s.draw();
-			//s.drawNext(0,0);
+			s.draw();
+			s.drawNext(0,0);
 			p.incrementCount();
 			//p.printDoubleArray(s.getField());
 			//System.out.println("#Number of holes = " + p.holes);
@@ -555,6 +556,6 @@ public class PlayerSkeletonDaphne {
 				e.printStackTrace();
 			}
 		}
-		//System.out.println("You have completed "+s.getRowsCleared()+" rows in " + p.getCount() + " turns.");
+		System.out.println("You have completed "+s.getRowsCleared()+" rows in " + p.getCount() + " turns.");
 	}
 }
