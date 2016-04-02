@@ -53,17 +53,22 @@ class Storage{
 		ArrayList<double[]> weights = new ArrayList<double[]>();
 		try {
 			BufferedReader read = new BufferedReader(new FileReader(file));
-			String[] content = read.readLine().split(" ");
-			double[] weight = new double[content.length];
-			for(int i=0; i<weight.length; ++i){
-				weight[i] = Double.parseDouble(content[i]);
+			String line;
+			while((line = read.readLine())!=null){
+				String[] content = line.split(" ");
+				double[] weight = new double[content.length];
+				for(int i=0; i<weight.length; ++i){
+					weight[i] = Double.parseDouble(content[i]);
+				}
+				weights.add(weight);
 			}
-			weights.add(weight);
 			read.close();
 		}catch(FileNotFoundException fnfe){
 			storageLog.log(Level.WARNING, "File disappeared: group06Weights.txt");
 		}catch(IOException ioe){
 			storageLog.log(Level.WARNING, "Failed to read from file: group06Weights.txt");
+		}catch(NullPointerException npe){
+			storageLog.log(Level.FINE, "read all contents from file: group06Weights.txt");
 		}
 		return weights;
 	}
