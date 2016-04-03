@@ -11,25 +11,36 @@ import java.util.logging.Logger;
 
 class Storage{
 	
-	private File file;
-	private static final String DEFAULT_FILE_NAME = "group06Weights.txt";
+	private File weightFile;
+	private File fitnessFile;
+	private static final String DEFAULT_WEIGHTS_FILE_NAME = "group06Weights.txt";
+	private static final String DEFAULT_FITNESS_FILE_NAME = "group06FitnessScores.txt";
 	
 	private static final Logger storageLog = Logger.getLogger( Storage.class.getName() );
 	
 	public Storage(){
-		file = new File(DEFAULT_FILE_NAME);
-		if(!file.exists()){
+		weightFile = new File(DEFAULT_WEIGHTS_FILE_NAME);
+		if(!weightFile.exists()){
 			try {
-				file.createNewFile();
+				weightFile.createNewFile();
 			} catch (IOException e) {
-				storageLog.log(Level.WARNING, "Failed to create text file: group06Weights.txt");
+				storageLog.log(Level.WARNING, "Failed to create text file: " + DEFAULT_WEIGHTS_FILE_NAME);
+			}
+		}
+		
+		fitnessFile = new File(DEFAULT_FITNESS_FILE_NAME);
+		if(!fitnessFile.exists()){
+			try {
+				fitnessFile.createNewFile();
+			} catch (IOException e) {
+				storageLog.log(Level.WARNING, "Failed to create text file: " + DEFAULT_FITNESS_FILE_NAME);
 			}
 		}
 	}
 	
 	public void storeWeights(ArrayList<double[]> weights){
 		try{
-			BufferedOutputStream write = new BufferedOutputStream(new FileOutputStream(file));
+			BufferedOutputStream write = new BufferedOutputStream(new FileOutputStream(weightFile));
 			for(int i=0; i<weights.size(); ++i){
 				double[] weight = weights.get(i);
 				StringBuffer s = new StringBuffer();
@@ -52,7 +63,7 @@ class Storage{
 	public ArrayList<double[]> retrieveWeights(){
 		ArrayList<double[]> weights = new ArrayList<double[]>();
 		try {
-			BufferedReader read = new BufferedReader(new FileReader(file));
+			BufferedReader read = new BufferedReader(new FileReader(weightFile));
 			String line;
 			while((line = read.readLine())!=null){
 				String[] content = line.split(" ");
@@ -64,12 +75,51 @@ class Storage{
 			}
 			read.close();
 		}catch(FileNotFoundException fnfe){
-			storageLog.log(Level.WARNING, "File disappeared: group06Weights.txt");
+			storageLog.log(Level.WARNING, "File disappeared: " + DEFAULT_WEIGHTS_FILE_NAME);
 		}catch(IOException ioe){
-			storageLog.log(Level.WARNING, "Failed to read from file: group06Weights.txt");
+			storageLog.log(Level.WARNING, "Failed to read from file: " + DEFAULT_WEIGHTS_FILE_NAME);
 		}catch(NullPointerException npe){
-			storageLog.log(Level.FINE, "read all contents from file: group06Weights.txt");
+			storageLog.log(Level.FINE, "read all contents from file: " + DEFAULT_WEIGHTS_FILE_NAME);
 		}
 		return weights;
+	}
+	
+	public void storeFitnessScores(ArrayList<double[]> fitnessScores){
+		try{
+			BufferedOutputStream write = new BufferedOutputStream(new FileOutputStream(fitnessFile));
+			for(int i=0; i<fitnessScores.size(); ++i){
+				double[] scores = fitnessScores.get(i);
+				StringBuffer s = new StringBuffer();
+				s.append(scores[0] + "\n");
+				byte[] contents = new String(s).getBytes();
+				write.write(contents,0,contents.length);
+				write.flush();
+			}
+			write.close();
+		}catch(FileNotFoundException fnfe){
+			storageLog.log(Level.WARNING, "File disappeared: " + DEFAULT_FITNESS_FILE_NAME);
+		}catch(IOException ioe){
+			storageLog.log(Level.WARNING, "Failed to write into file: " + DEFAULT_FITNESS_FILE_NAME);
+		}
+	}
+	
+	public ArrayList<Double> retrieveFitnessScores(){
+		ArrayList<Double> fitnessScores = new ArrayList<Double>();
+		try {
+			BufferedReader read = new BufferedReader(new FileReader(fitnessFile));
+			String line;
+			while((line = read.readLine())!=null){
+				double score = Double.parseDouble(line);
+				fitnessScores.add(score);
+			}
+			read.close();
+		}catch(FileNotFoundException fnfe){
+			storageLog.log(Level.WARNING, "File disappeared: " + DEFAULT_FITNESS_FILE_NAME);
+		}catch(IOException ioe){
+			storageLog.log(Level.WARNING, "Failed to read from file: " + DEFAULT_FITNESS_FILE_NAME);
+		}catch(NullPointerException npe){
+			storageLog.log(Level.FINE, "read all contents from file: " + DEFAULT_FITNESS_FILE_NAME);
+		}
+		return fitnessScores;
 	}
 }
