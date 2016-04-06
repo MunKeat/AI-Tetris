@@ -13,6 +13,8 @@ public class PlayerSkeletonLocalBeam {
 	
 	private static final Logger localBeamLog = Logger.getLogger( PlayerSkeletonLocalBeam.class.getName() );
 	
+	public PlayerSkeletonLocalBeam(){}
+	
 	public PlayerSkeletonLocalBeam(double[] weights){
 		setWeights(weights);
 	}
