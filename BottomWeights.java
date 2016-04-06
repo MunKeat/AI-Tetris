@@ -1,22 +1,32 @@
 import java.util.ArrayList;
-import java.util.Random;
 
 public class BottomWeights{
 	private ArrayList<double[]> originalWeights;
 	private ArrayList<Double> results;
+	ArrayList<double[]> unrankedFitnessScoresList = new ArrayList<double[]>();
+	FitnessTester fitnessTester;
 	
 	private int totalWeights;
+	private int populationSize;
 	
-	private Random rand = new Random();
+	ArrayList<double[]> newWeights = new ArrayList<double[]>();
+	ArrayList<Double> newScores = new ArrayList<Double>();
+	
+	//private Random rand = new Random();
 	
 	private Storage storage = new Storage();
 	
 	public BottomWeights(){}
 	
-	public BottomWeights(ArrayList<double[]> weights, ArrayList<Double> results){
+	public BottomWeights(ArrayList<double[]> weights, ArrayList<Double> results, FitnessTester fitnessTester){
 		this.originalWeights = weights;
 		this.results = results;
+		for (int i = 0; i < results.size(); i++) {
+			unrankedFitnessScoresList.add(new double[]{results.get(i), i});
+		}
 		totalWeights = originalWeights.size();
+		populationSize = totalWeights*10/13;
+		this.fitnessTester = fitnessTester;
 	}
 	
 	public void setWeights(ArrayList<double[]> weights){
@@ -28,17 +38,34 @@ public class BottomWeights{
 		this.results = results;
 	}
 	
-	public ArrayList<double[]> removeBottomThirtyPercentAndFill(){
+	/*public ArrayList<double[]> removeBottomThirtyPercentAndFill(){
 		if(this.originalWeights == null || this.results == null){
 			return null;
 		}
+		
 		sortReverseWeights();
 		addRandomWeights();
 		saveChildrenWeights(originalWeights);
+		
 		return originalWeights;
+	}*/
+	
+	public void removeBottomThirtyPercentAndFill(){
+		if(this.originalWeights == null || this.results == null){
+			return;
+		}
+		
+		//sortReverseWeights();
+		fitnessTester.rankWeightSets(originalWeights, unrankedFitnessScoresList, null, false);
+		results = fitnessTester.getRankedFitnessScores();
+		
+		for (int i = 0; i < populationSize; i++) {
+			newWeights.add(originalWeights.get(i));
+			newScores.add(results.get(i));
+		}
 	}
 	
-	private void addRandomWeights(){
+	/*private void addRandomWeights(){
 		int size = originalWeights.get(0).length;
 		for(int i=700; i<1000; ++i){
 			double[] weight = new double[size];
@@ -48,9 +75,9 @@ public class BottomWeights{
 			}
 			originalWeights.set(i, weight);
 		}
-	}
+	}*/
 	
-	private void sortReverseWeights() {
+	/*private void sortReverseWeights() {
 		for(int pivot = 0; pivot<totalWeights-1; ++pivot){
 			int storeIndex = pivot+1;
 			for(int i=pivot+1; i<totalWeights; ++i){
@@ -61,9 +88,9 @@ public class BottomWeights{
 			}
 			swap(pivot,storeIndex-1);
 		}
-	}
+	}*/
 	
-	private void swap(int i, int j){
+	/*private void swap(int i, int j){
 		//System.out.println("i = " + i + ", j = " + j);
 		double[] tempArray = originalWeights.get(i);
 		Double temp = results.get(i);
@@ -71,16 +98,24 @@ public class BottomWeights{
 		results.set(i, results.get(j));
 		originalWeights.set(j, tempArray);
 		results.set(j, temp);
-	}
+	}*/
 
-	public ArrayList<double[]> removeBottomThirtyPercentAndFill(ArrayList<double[]> weights, ArrayList<Double> results){
+	/*public ArrayList<double[]> removeBottomThirtyPercentAndFill(ArrayList<double[]> weights, ArrayList<Double> results){
 		this.originalWeights = weights;
 		this.results = results;
 		return removeBottomThirtyPercentAndFill();
-	}
+	}*/
 	
 	public void saveChildrenWeights(ArrayList<double[]> weights){
 		storage.storeWeights(weights);
+	}
+	
+	public ArrayList<double[]> getNewWeights(){
+		return newWeights;
+	}
+	
+	public ArrayList<Double> getNewScores(){
+		return newScores;
 	}
 	
 	/*
