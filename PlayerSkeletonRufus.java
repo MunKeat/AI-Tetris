@@ -17,19 +17,20 @@ public class PlayerSkeletonRufus {
 	/////////////////////////////*Modify the 8 elements below to choose how you want to run the program*////////////////////////////////
 	
 	//Set mode as 1 to play game, 2 to run standard fitness test, 3 to run timed fitness test, 4 to run standard trial, 5 to run timed trial
-	private static int mode = 5; 
+	private static int mode = 1; 
 	
 	//Weighted factors are aggregate height, number of holes, bumpiness, maximum heights sum, holes depth, and wells depth
 	private static double[] weightsDefault = normalizeWeight(new double[] 
+										    //{20, 35, 20, 19, 3, 3}); // -- modify for game or fitness test (mode 1, 2 or 3)
 											{0.0044, 0.3002, 0.0395, 0.0179, 0.3497, 0.2883});
 
 	private static boolean printAIthoughts = false; //set as true to debug the AI's method of determining best move
 	private static boolean printGameStatesInfo = true; //set as true to print game states' information to the console (if not writing to file)
 	private static boolean writeResultToFile = true; //set as true to write results to file
 	
-	private static int numberOfWeightSets = 20; //how many weight sets to generate -- for trials (mode 4 or 5)
-	private static int numberOfGames = 20; //how many games to run for a weight set -- for fitness test or trials (mode 2, 3, 4 or 5)
-	private static int maxNumberOfTurns = 500;  //how many turns before a game terminates -- for timed fitness test or timed trial (mode 3 or 5)
+	private static int numberOfWeightSets = 10; //how many weight sets to generate -- for trials (mode 4 or 5)
+	private static int numberOfGames = 10; //how many games to run for a weight set -- for fitness test or trials (mode 2, 3, 4 or 5)
+	private static int maxNumberOfTurns = 200;  //how many turns before a game terminates -- for timed fitness test or timed trial (mode 3 or 5)
 	
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -376,7 +377,7 @@ public class PlayerSkeletonRufus {
 
 	/**
 	 * Compute the score of each legal move (possible next state) 
-	 * using the factors: aggregate height, hole score, bumpiness, max heights sum, holes depth, and wells depth.
+	 * using the heuristics: aggregate height, hole score, bumpiness, and max heights sum.
 	 * And find the best move which has the lowest score
 	 * @return best move
 	 */
@@ -886,8 +887,8 @@ public class PlayerSkeletonRufus {
 		sortWeightSetsList(weightSetsList, fitnessScoresList);
 		printTrialRanking(fitnessScoresList, weightSetsList, timed);
 		
-		writeWeightSetsToFile(weightSetsList);
-		writeFitnessScoresToFile(fitnessScoresList);
+		//writeWeightSetsToFile(weightSetsList);
+		//writeFitnessScoresToFile(fitnessScoresList);
 		if (writeResultToFile) {
 			writeTrialResultToFile(gameScoresList, fitnessScoresList, weightSetsList, timed);
 		}
@@ -955,34 +956,14 @@ public class PlayerSkeletonRufus {
 		System.out.println("\n--------------------------------------------\n");
 	}
 
-	private static void writeWeightSetsToFile(ArrayList<double[]> weightSetsList) {
+	/*private static void writeWeightSetsToFile(ArrayList<double[]> weightSetsList) {
 		Storage storage = new Storage();
 		storage.storeWeights(weightSetsList);
-	}
-
-	/*private static void readWeightSetsFromFile() {
-		Storage storage = new Storage();
-		ArrayList<double[]> weightSetsList = storage.retrieveWeights();
-		for (int i = 0; i < weightSetsList.size(); i++) {
-			double[] weightSet = weightSetsList.get(i);
-			for (int j = 0; j < weightSet.length; j++) {
-				System.out.print(weightSet[j]+ " ");
-			}
-			System.out.println("");
-		}
 	}*/
 	
-	private static void writeFitnessScoresToFile(ArrayList<double[]> fitnessScoresList) {
+	/*private static void writeFitnessScoresToFile(ArrayList<double[]> fitnessScoresList) {
 		Storage storage = new Storage();
 		storage.storeFitnessScores(fitnessScoresList);
-	}
-	
-	/*private static void readFitnessScoresFromFile() {
-		Storage storage = new Storage();
-		ArrayList<Double> fitnessScoresList = storage.retrieveFitnessScores();
-		for (int i = 0; i < fitnessScoresList.size(); i++) {
-			System.out.println(fitnessScoresList.get(i));
-		}
 	}*/
 	
 	private static void writeTrialResultToFile(ArrayList<ArrayList<Integer>> gameScoresList, ArrayList<double[]> fitnessScoresList, 
@@ -1025,6 +1006,9 @@ public class PlayerSkeletonRufus {
 			runTimedTrial();
 		} else {
 			System.out.println("Invalid game mode!");
+			/*FitnessTester ft = new FitnessTester(10, 10, 200);
+			ft.createPopulation();
+			ft.testOffspringFitness(new double[]{2, 4, 5, 1, 2, 6});*/
 		}
 	}
 	
