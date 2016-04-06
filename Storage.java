@@ -13,8 +13,10 @@ class Storage{
 	
 	private File weightFile;
 	private File fitnessFile;
+	private File settingsFile;
 	private static final String DEFAULT_WEIGHTS_FILE_NAME = "group06Weights.txt";
 	private static final String DEFAULT_FITNESS_FILE_NAME = "group06FitnessScores.txt";
+	private static final String DEFAULT_SETTINGS_FILE_NAME = "group06Settings.txt";
 	
 	private static final Logger storageLog = Logger.getLogger( Storage.class.getName() );
 	
@@ -34,6 +36,15 @@ class Storage{
 				fitnessFile.createNewFile();
 			} catch (IOException e) {
 				storageLog.log(Level.WARNING, "Failed to create text file: " + DEFAULT_FITNESS_FILE_NAME);
+			}
+		}
+		
+		settingsFile = new File(DEFAULT_SETTINGS_FILE_NAME);
+		if(!settingsFile.exists()){
+			try {
+				settingsFile.createNewFile();
+			} catch (IOException e) {
+				storageLog.log(Level.WARNING, "Failed to create text file: " + DEFAULT_SETTINGS_FILE_NAME);
 			}
 		}
 	}
@@ -84,13 +95,13 @@ class Storage{
 		return weights;
 	}
 	
-	public void storeFitnessScores(ArrayList<double[]> fitnessScores){
+	public void storeFitnessScores(ArrayList<Double> fitnessScores){
 		try{
 			BufferedOutputStream write = new BufferedOutputStream(new FileOutputStream(fitnessFile));
 			for(int i=0; i<fitnessScores.size(); ++i){
-				double[] scores = fitnessScores.get(i);
+				Double scores = fitnessScores.get(i);
 				StringBuffer s = new StringBuffer();
-				s.append(scores[0] + "\n");
+				s.append(scores + "\n");
 				byte[] contents = new String(s).getBytes();
 				write.write(contents,0,contents.length);
 				write.flush();
@@ -121,5 +132,43 @@ class Storage{
 			storageLog.log(Level.FINE, "read all contents from file: " + DEFAULT_FITNESS_FILE_NAME);
 		}
 		return fitnessScores;
+	}
+
+	public void storeSettings(int numberOfWeightSets, int numberOfGames, int maxNumberOfTurns) {
+		try{
+			BufferedOutputStream write = new BufferedOutputStream(new FileOutputStream(settingsFile));
+			StringBuffer s = new StringBuffer();
+			s.append(Integer.toString(numberOfWeightSets) + "\n");
+			s.append(Integer.toString(numberOfGames) + "\n");
+			s.append(Integer.toString(maxNumberOfTurns) + "\n");
+			byte[] contents = new String(s).getBytes();
+			write.write(contents,0,contents.length);
+			write.flush();
+			write.close();
+		}catch(FileNotFoundException fnfe){
+			storageLog.log(Level.WARNING, "File disappeared: " + DEFAULT_SETTINGS_FILE_NAME);
+		}catch(IOException ioe){
+			storageLog.log(Level.WARNING, "Failed to write into file: " + DEFAULT_SETTINGS_FILE_NAME);
+		}
+	}
+	
+	public int[] retrieveSettings(){
+		int numberOfWeightSets = 0;
+		int numberOfGames = 0;
+		int maxNumberOfTurns = 0;
+		try {
+			BufferedReader read = new BufferedReader(new FileReader(settingsFile));
+			numberOfWeightSets = Integer.parseInt(read.readLine());
+			numberOfGames = Integer.parseInt(read.readLine());
+			maxNumberOfTurns = Integer.parseInt(read.readLine());
+			read.close();
+		}catch(FileNotFoundException fnfe){
+			storageLog.log(Level.WARNING, "File disappeared: " + DEFAULT_SETTINGS_FILE_NAME);
+		}catch(IOException ioe){
+			storageLog.log(Level.WARNING, "Failed to read from file: " + DEFAULT_SETTINGS_FILE_NAME);
+		}catch(NullPointerException npe){
+			storageLog.log(Level.FINE, "read all contents from file: " + DEFAULT_SETTINGS_FILE_NAME);
+		}
+		return new int[]{numberOfWeightSets, numberOfGames, maxNumberOfTurns};
 	}
 }
