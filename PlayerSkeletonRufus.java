@@ -17,12 +17,12 @@ public class PlayerSkeletonRufus {
 	/////////////////////////////*Modify the 8 elements below to choose how you want to run the program*////////////////////////////////
 	
 	//Set mode as 1 to play game, 2 to run standard fitness test, 3 to run timed fitness test, 4 to run standard trial, 5 to run timed trial
-	private static int mode = 1; 
+	private static int mode = 2; 
 	
 	//Weighted factors are aggregate height, number of holes, bumpiness, maximum heights sum, holes depth, and wells depth
 	private static double[] weightsDefault = normalizeWeight(new double[] 
 										    //{20, 35, 20, 19, 3, 3}); // -- modify for game or fitness test (mode 1, 2 or 3)
-											{0.0044, 0.3002, 0.0395, 0.0179, 0.3497, 0.2883});
+											{0.0167, 0.6619, 0.0829, 0.0158, 0.1293, 0.0935});
 
 	private static boolean printAIthoughts = false; //set as true to debug the AI's method of determining best move
 	private static boolean printGameStatesInfo = true; //set as true to print game states' information to the console (if not writing to file)

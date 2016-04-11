@@ -49,8 +49,8 @@ public class SelectionMutation {
 		bestTwoScores[0] = 0;
 		bestTwoScores[1] = -1;
 		ArrayList<double[]> bestTwoWeightSets = new ArrayList<double[]>();
-		bestTwoWeightSets.add(0, new double[6]);
-		bestTwoWeightSets.add(1, new double[6]);
+		bestTwoWeightSets.add(0, new double[7]);
+		bestTwoWeightSets.add(1, new double[7]);
 		int i;
 		System.out.print("Bracket: ");
 		for (i = 0; i < sizeOfEachBracket; i++) {
@@ -86,7 +86,7 @@ public class SelectionMutation {
 
 	// returns the weight set of the child 
 	private double[] newOffspring(ArrayList<double[]> parents) {
-		double[] offspringWeightSet = new double[6];
+		double[] offspringWeightSet = new double[7];
 		double[] parentsFitnessScores = parents.get(2);
 		double parentAScore = parentsFitnessScores[0];
 		double parentBScore = parentsFitnessScores[1];
@@ -114,7 +114,7 @@ public class SelectionMutation {
 	private double[] mutation(double[] offspringWeight) {
 		System.out.print("MUTATION! [");
 		double[] mutatedOffspring = offspringWeight;
-		int selectAttribute = rand.nextInt(6);
+		int selectAttribute = rand.nextInt(7);
 		int sign = (int) Math.pow(-1, rand.nextInt(2) + 1);
 		// scale of mutation is limited within the range of +- 0.2
 		double mutatedAttribute = offspringWeight[selectAttribute] + sign * 0.2 * Math.random();

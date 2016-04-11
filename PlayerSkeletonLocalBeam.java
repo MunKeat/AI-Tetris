@@ -1,17 +1,17 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.logging.Logger;
+import java.util.Comparator;
 
 public class PlayerSkeletonLocalBeam {
 	
 	private final static int MILLION = 1000000;
-	private final static int MAX_BEAM = 4;
-	private final static int LAST_BEAM = 3;
-	private final static int REPLACED_INDEX = 1;
-	private static double[] weights;
+	private final static int MAX_BEAM = 3;
+	private final static int LAST_BEAM = 2;
+	//private final static int REPLACED_INDEX = 1;
+	private double[] weights;
 	
-	private static final Logger localBeamLog = Logger.getLogger( PlayerSkeletonLocalBeam.class.getName() );
+	//private static final Logger localBeamLog = Logger.getLogger( PlayerSkeletonLocalBeam.class.getName() );
 	
 	public PlayerSkeletonLocalBeam(){}
 	
@@ -26,8 +26,8 @@ public class PlayerSkeletonLocalBeam {
 	//implement this function to have a working system
 	public int localBeamMove(State s, int[][] legalMoves) {
 		
-		int[] replacedIndex = new int[REPLACED_INDEX];
-		int[] stateNumber = new int[MAX_BEAM];
+		//int[] replacedIndex = new int[REPLACED_INDEX];
+		//int[] stateNumber = new int[MAX_BEAM];
 		double[] beamHeuristic = new double[MAX_BEAM];
 		int[] position = new int[MAX_BEAM];
 		
@@ -38,42 +38,87 @@ public class PlayerSkeletonLocalBeam {
 		FutureState[] nextState = new FutureState[MAX_BEAM];
 		
 		int chosenMove = 0;
-		double lowestBeamHeuristic = -MILLION;
+		//double lowestBeamHeuristic = -MILLION;
+		int nextPiece = s.getNextPiece();
 		
+		ArrayList<double[]> heurList = new ArrayList<double[]>();
+		ArrayList<FutureState> stateList = new ArrayList<FutureState>();
+		
+		//System.out.println("\n\nPIECE: " + nextPiece);
+		//System.out.print("SCORES: ");
 		for(int move = 0; move < legalMoves.length; ++move){
 			FutureState nextS = new FutureState(s, weights);
+			nextS.setBlock(nextPiece);
 			
 			double heuristic = nextS.getHeuristic(legalMoves[move]);
-			
-			if(heuristic > lowestBeamHeuristic){
+			heurList.add(new double[]{heuristic, move});
+			stateList.add(nextS);
+			//System.out.print(heuristic + ", ");
+			/*if(heuristic > lowestBeamHeuristic){
 				beamHeuristic[LAST_BEAM] = heuristic;
 				lowestBeamHeuristic = sort(beamHeuristic,stateNumber,replacedIndex);
 				nextState[replacedIndex[0]] = new FutureState(nextS, weights);
 				position[replacedIndex[0]] = move;
-			}
+			}*/
 		}	
 		
-		double[][] totalScores = new double[MAX_BEAM][s.N_PIECES];
+		final Comparator<double[]> heuComparator = new Comparator<double[]>() {
+	        @Override
+	        public int compare(double[] o1, double[] o2) {
+	            return Double.compare(o2[0], o1[0]); //rank from highest to lowest score
+	        }
+	    };
+	    Collections.sort(heurList, heuComparator);
+		for (int i = 0; i < MAX_BEAM; i++) {
+			nextState[i] = new FutureState(stateList.get((int)heurList.get(i)[1]), weights);
+			nextState[i].setBlock(nextPiece);
+			position[i] = (int)heurList.get(i)[1];
+			nextState[i].makeMove(position[i]);
+		}
+		
+		/*System.out.print("\nBEST MOVES: ");
+		for (int i = 0; i < position.length; i++) {
+			System.out.print(position[i] + ", ");
+		}*/
+		
+		double[][] totalScores = new double[MAX_BEAM][State.N_PIECES];
 		
 		for(int beamIndex = 0; beamIndex < MAX_BEAM; ++beamIndex){
+			
 			FutureState nextNextState = new FutureState(nextState[beamIndex], weights);
-			for(int block = 0; block < s.N_PIECES; ++block){
+			for(int block = 0; block < State.N_PIECES; ++block){
 				nextNextState.setBlock(block);
 				legalMoves = nextNextState.legalMoves();
+				double highestBeamHeuristic = -MILLION;
 				
 				for(int move = 0; move < legalMoves.length; ++move){
 					FutureState nextS = new FutureState(nextNextState, weights);
-					totalScores[beamIndex][block] += nextS.getHeuristic(legalMoves[move]);
+					//totalScores[beamIndex][block] += nextS.getHeuristic(legalMoves[move]);
+					double heuristic = nextS.getHeuristic(legalMoves[move]);
+					if (heuristic > highestBeamHeuristic) {
+						highestBeamHeuristic = heuristic;
+					}
 				}
+				totalScores[beamIndex][block] += highestBeamHeuristic;
 			}
 		}
 		
 		double[] beamTotalScore = new double[MAX_BEAM];
 		for(int beamIndex = 0; beamIndex<MAX_BEAM; ++beamIndex){
-			for(int index = 0; index < s.N_PIECES; ++index){
-				beamTotalScore[beamIndex] += totalScores[beamIndex][index];
+			ArrayList<Double> nextNextTotals = new ArrayList<Double>();
+			for(int index = 0; index < State.N_PIECES; ++index){
+				nextNextTotals.add(totalScores[beamIndex][index]);
 			}
+			Collections.sort(nextNextTotals);
+			Collections.reverse(nextNextTotals);
+			beamTotalScore[beamIndex] += (nextNextTotals.get(0) + nextNextTotals.get(1) + nextNextTotals.get(2))/3;
+			beamTotalScore[beamIndex] += heurList.get(beamIndex)[0];
 		}
+		
+		/*System.out.print("\nBEST SCORES: ");
+		for (int i = 0; i < beamTotalScore.length; i++) {
+			System.out.print(beamTotalScore[i] + ", ");
+		}*/
 		
 		double score = -MILLION;
 		for(int beamIndex = 0; beamIndex<MAX_BEAM; ++beamIndex){
@@ -83,6 +128,7 @@ public class PlayerSkeletonLocalBeam {
 			}
 		}
 		
+		//System.out.println("\nCHOSEN MOVE: " + chosenMove);
 		return chosenMove;
 	}
 	
@@ -92,11 +138,11 @@ public class PlayerSkeletonLocalBeam {
 		for(int i=0; i<MAX_BEAM; ++i){
 			for(int j=0; j<MAX_BEAM; ++j){
 				if(beamHeuristic[i] < beamHeuristic[j]){
-					if(replacedIndex[0] == i){
+					/*if(replacedIndex[0] == i){
 						replacedIndex[0] = j;
 					}else if(replacedIndex[0] == j){
 						replacedIndex[0] = i;
-					}
+					}*/
 					double temp = beamHeuristic[j];
 					beamHeuristic[j] = beamHeuristic[i];
 					beamHeuristic[i] = temp;
@@ -112,16 +158,16 @@ public class PlayerSkeletonLocalBeam {
 	public static void main(String[] args) {
 		State s = new State();
 		new TFrame(s);
-		PlayerSkeletonLocalBeam p = new PlayerSkeletonLocalBeam();
+		PlayerSkeletonLocalBeam p = new PlayerSkeletonLocalBeam(new double[]{-0.0031, 0.0129, -0.6032, -0.0533, -0.0899, -0.2354, -0.0281});
 		while(!s.hasLost()) {
 			s.makeMove(p.localBeamMove(s,s.legalMoves()));
 			s.draw();
 			s.drawNext(0,0);
-			try {
-				Thread.sleep(300);
+			/*try {
+				Thread.sleep(30);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
-			}
+			}*/
 		}
 		System.out.println("You have completed "+s.getRowsCleared()+" rows.");
 	}
@@ -135,6 +181,7 @@ public class PlayerSkeletonLocalBeam {
 class FutureState extends State{
 	
 	private double[] weight;
+	private final static int MILLION = 1000000;
 	
 	/*Initializes the variables*/
 	private int[][] field = new int[ROWS][];
@@ -200,7 +247,7 @@ class FutureState extends State{
 	}
 	
 	public double getHeuristic(int[] move){
-		double heuristic = 0;
+		double heuristic = -MILLION;
 
 		int[] linesCompleted = new int[1];
 		boolean isContinue = simulateMove(linesCompleted, move);
@@ -225,43 +272,96 @@ class FutureState extends State{
 		return heuristic;
 	}
 	
-	
+	public boolean makeMove(int orient, int slot) {
+		//height if the first column makes contact
+		int height = top[slot]-pBottom[piece][orient][0];
+		//for each column beyond the first in the piece
+		for(int c = 1; c < pWidth[piece][orient];c++) {
+			height = Math.max(height,top[slot+c]-pBottom[piece][orient][c]);
+		}
+		
+		//check if game ended
+		if(height+pHeight[piece][orient] >= ROWS) {
+			lost = true;
+			return false;
+		}
+		
+		//for each column in the piece - fill in the appropriate blocks
+		for(int i = 0; i < pWidth[piece][orient]; i++) {
+			//from bottom to top of brick
+			for(int h = height+pBottom[piece][orient][i]; h < height+pTop[piece][orient][i]; h++) {
+				field[h][i+slot] = numFilledSquares;
+			}
+		}
+		
+		//adjust top
+		for(int c = 0; c < pWidth[piece][orient]; c++) {
+			top[slot+c]=height+pTop[piece][orient][c];
+		}
+		
+		//check for full rows - starting at the top
+		for(int r = height+pHeight[piece][orient]-1; r >= height; r--) {
+			//check all columns in the row
+			boolean full = true;
+			for(int c = 0; c < COLS; c++) {
+				if(field[r][c] == 0) {
+					full = false;
+					break;
+				}
+			}
+			//if the row was full - remove it and slide above stuff down
+			if(full) {
+				//for each column
+				for(int c = 0; c < COLS; c++) {
+
+					//slide down all bricks
+					for(int i = r; i < top[c]; i++) {
+						field[i][c] = field[i+1][c];
+					}
+					//lower the top
+					top[c]--;
+					while(top[c]>=1 && field[top[c]-1][c]==0)	top[c]--;
+				}
+			}
+		}
+		return true;
+	}
 	
 	private boolean simulateMove(int[] linesComplete, int[] move){
 		int location = move[SLOT];
 		int orient = move[ORIENT];
 		
 		//height if the first column makes contact
-		int height = top[location]-pBottom[nextPiece][orient][0];
+		int height = top[location]-pBottom[this.piece][orient][0];
 		//for each column beyond the first in the piece
-		for(int c = 1; c < pWidth[nextPiece][orient];++c) {
-			height = Math.max(height,top[location+c]-pBottom[nextPiece][orient][c]);
+		for(int c = 1; c < pWidth[this.piece][orient];++c) {
+			height = Math.max(height,top[location+c]-pBottom[this.piece][orient][c]);
 		}
 			
 		//check if game ended
-		if(height+pHeight[nextPiece][orient] >= ROWS) {		
+		if(height+pHeight[this.piece][orient] >= ROWS) {		
 			return false;
 		}
 
 			
 		//for each column in the piece - fill in the appropriate blocks
-		for(int i = 0; i < pWidth[nextPiece][orient]; ++i) {
+		for(int i = 0; i < pWidth[this.piece][orient]; ++i) {
 				
 			//from bottom to top of brick
-			for(int h = height+pBottom[nextPiece][orient][i]; h < height+pTop[nextPiece][orient][i]; ++h) {
+			for(int h = height+pBottom[this.piece][orient][i]; h < height+pTop[this.piece][orient][i]; ++h) {
 				field[h][i+location] = 1;
 			}
 		}
 			
 		//adjust top
-		for(int c = 0; c < pWidth[nextPiece][orient]; ++c) {
-			top[location+c]=height+pTop[nextPiece][orient][c];
+		for(int c = 0; c < pWidth[this.piece][orient]; ++c) {
+			top[location+c]=height+pTop[this.piece][orient][c];
 		}
 			
 		linesComplete[0] = 0;
 			
 		//check for full rows - starting at the top
-		for(int r = height+pHeight[nextPiece][orient]-1; r >= height; r--) {
+		for(int r = height+pHeight[this.piece][orient]-1; r >= height; r--) {
 			//check all columns in the row
 			boolean full = true;
 			for(int c = 0; c < COLS; ++c) {

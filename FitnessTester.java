@@ -8,10 +8,12 @@ public class FitnessTester {
 	
 	private int numberOfGames = 0;
 	private int maxNumberOfTurns = 0;
+	private int maxNumberOfRowsCleared = 0;
 	
 	public FitnessTester(int nGames, int nTurns){
 		numberOfGames = nGames;
 		maxNumberOfTurns = nTurns;
+		maxNumberOfRowsCleared = maxNumberOfTurns*4/10;
 	}
 	
 	private ArrayList<Integer> gameScores;
@@ -30,10 +32,10 @@ public class FitnessTester {
 		
 		for (int i = 0; i < numberOfGames; i++) {
 			State s = new State();
-			PlayerSkeletonRufus p = new PlayerSkeletonRufus();
+			PlayerSkeletonLocalBeam p = new PlayerSkeletonLocalBeam(weights);
 			
 			while(!s.hasLost() && s.getTurnNumber() < maxNumberOfTurns) {
-				s.makeMove(p.pickMove(s, s.legalMoves(), weights));
+				s.makeMove(p.localBeamMove(s, s.legalMoves()));
 			}
 			System.out.println("Game " + (i+1) + ": " + s.getRowsCleared());
 			gameScores.add(s.getRowsCleared());
@@ -75,7 +77,7 @@ public class FitnessTester {
 		System.out.println("--------------------------------------------");
 		System.out.println("\nMax number of turns = " + maxNumberOfTurns);
 		//4 = number of squares in a piece, 10 = number of squares in a row
-		System.out.println("Max number of rows that can be cleared = " + (maxNumberOfTurns*4/10)); 
+		System.out.println("Max number of rows that can be cleared = " + maxNumberOfRowsCleared); 
 		
 		System.out.println("\nFITNESS RANKING:");
 		for (int i = 0; i < fitnessScoresList.size(); i++) {
@@ -94,6 +96,17 @@ public class FitnessTester {
 		double averageScore = scoreSum / gameScores.size();
 		
 		return averageScore;
+	}
+	
+	public double getAverageFitness(ArrayList<Double> fitnessScores) {
+		double scoreSum = 0;
+		
+		for (int i = 0; i < fitnessScores.size(); i++) {
+			scoreSum += fitnessScores.get(i);
+		}
+		double averageFitness = scoreSum / fitnessScores.size();
+		
+		return averageFitness;
 	}
 	
 	private void sortFitnessScores(ArrayList<double[]> fitnessScoresList){

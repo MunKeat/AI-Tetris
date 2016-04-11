@@ -17,13 +17,16 @@ public class GeneticMaster {
 	private int numberOfWeightSets = 0;
 	private int numberOfGames = 0;
 	private int maxNumberOfTurns = 0;
+	private int maxNumberOfRowsCleared = 0;
 	private int numberOfChildWeightSets = 0;
+	private int numberOfTopWeightSets = 50;
 	
 	public GeneticMaster(int nWeightSets, int nGames, int nTurns){
 		numberOfWeightSets = nWeightSets;
 		numberOfChildWeightSets = nWeightSets*3/10;
 		numberOfGames = nGames;
 		maxNumberOfTurns = nTurns;
+		maxNumberOfRowsCleared = maxNumberOfTurns*4/10;
 		fitnessTester = new FitnessTester(numberOfGames, maxNumberOfTurns);
 	}
 	
@@ -35,7 +38,7 @@ public class GeneticMaster {
 	private static final String DEFAULT_WEIGHTS_FILE_NAME = "group06Weights.txt";
 	private boolean writeReport = true; //set as true if you want to save the test report to file
 	
-	private int numberOfWeightedFactors = 6;
+	private int numberOfWeightedFactors = 7;
 	private DecimalFormat fourDP = new DecimalFormat("0.0000");
 	private File output;
 	private FileOutputStream fos;
@@ -44,6 +47,7 @@ public class GeneticMaster {
 	private Storage storage = new Storage();
 	private static final int POPULATIONREPORT = 1;
 	private static final int OFFSPRINGREPORT = 2;
+	private static final int ADVANCEDTESTREPORT = 3;
 	
 	/**
 	 * Create Population
@@ -117,7 +121,7 @@ public class GeneticMaster {
 		}
 		int k = numberOfWeightedFactors;
 		
-		for (int i = weights.length; i > 1; i--) {
+		for (int i = numberOfWeightedFactors; i > 1; i--) {
 			int r = rand.nextInt(k); //pick random factor
 			weights[weightIndex.get(r)] = rand.nextInt(weightBound-k+1) + 1; //assign random weight
 			weightBound -= weights[weightIndex.get(r)]; //remaining unassigned weight
@@ -129,15 +133,20 @@ public class GeneticMaster {
 		return normalizeWeight(weights);
 	}
 
-	private double[] normalizeWeight(double[] weightsDefault) {
+	private double[] normalizeWeight(double[] weights) {
 		double weightSum = 0;
-		for (int j = 0; j < weightsDefault.length; j++) {
-			weightSum += weightsDefault[j];
+		
+		for (int j = 0; j < weights.length; j++) {
+			weightSum += weights[j];
 		}
-		for (int j = 0; j < weightsDefault.length; j++) {
-			weightsDefault[j] = Math.round((weightsDefault[j] / weightSum) * 10000.0) / 10000.0; 
+		for (int j = 0; j < weights.length; j++) {
+			weights[j] = -(Math.round((weights[j] / weightSum) * 10000.0) / 10000.0); //normalize & negate
 		}
-		return weightsDefault;
+		if (weights[1] < 0) {
+			weights[1] = -weights[1];
+		}
+		
+		return weights;
 	}
 	
 	private void makeOffspring() {
@@ -206,8 +215,28 @@ public class GeneticMaster {
 			nWeightSets = numberOfWeightSets;
 		} else if (reportType == OFFSPRINGREPORT) {
 			writeToFile("Reports/offspringReport__" + numberOfChildWeightSets + "-" + numberOfGames + "-" + maxNumberOfTurns + "__(" + getDateTime() + ").txt");
-			System.out.println(numberOfWeightSets + " OFFSPRINGS CREATED.\n");
+			System.out.println(numberOfChildWeightSets + " OFFSPRINGS CREATED.\n");
 			nWeightSets = numberOfChildWeightSets;
+		} else if (reportType == ADVANCEDTESTREPORT){
+			writeToFile("Reports/advancedTestReport__" + numberOfTopWeightSets + "-" + numberOfGames + "-" + maxNumberOfTurns + "__(" + getDateTime() + ").txt");
+			System.out.println(numberOfTopWeightSets + " TOP WEIGHT SETS TESTED.\n");
+			nWeightSets = numberOfTopWeightSets;
+			
+			double averageFitnessScore = fitnessTester.getAverageFitness(fitnessScoresList);
+			System.out.println("Average Fitness Score: " + averageFitnessScore);
+			
+			for (int j = 0; j < numberOfTopWeightSets; j++){
+				double oldFitnessScore = fitnessScoresList.get(j);
+				System.out.print((j+1) + ") [" + convertWeightsToStringOfDecimals(weightSetsList.get(j)) + "] old: " + oldFitnessScore);
+				if (fitnessScoresList.get(j) >= averageFitnessScore) {
+					System.out.print(" new: " + Math.min(maxNumberOfRowsCleared, (oldFitnessScore+0.1)) + " (+0.1)\n");
+				} else {
+					System.out.print(" new: " + (oldFitnessScore-1) + " (-1)\n");
+				}
+			}
+			
+			closeStreams();
+			return;
 		}
 		
 		fitnessTester.printRanking(weightSetsList, fitnessScoresList);
@@ -314,17 +343,61 @@ public class GeneticMaster {
 	}
 	
 	public static void main(String[] args) {
-		GeneticMaster geneticMaster = new GeneticMaster(1000, 100, 500);
+		GeneticMaster geneticMaster = new GeneticMaster(250, 15, 250);
 		if (!geneticMaster.populationExists()) {
 			geneticMaster.createPopulation();
 		} else {
 			boolean isSameSettings = geneticMaster.readPopulationFromFile();
 			if (isSameSettings) {
-				for (int i = 0; i < 4; i++) {
+				for (int i = 0; i < 1; i++) {
 					geneticMaster.makeOffspring();
 					geneticMaster.eliminateWeaklings();
 				}
+				//geneticMaster.advancedTest(30, 3000);
 			}
 		}
 	}
+
+	/*private void advancedTest(int nGames, int nTurns) {
+		
+		FitnessTester advancedFitnessTester = new FitnessTester(nGames, nTurns);
+		
+		ArrayList<ArrayList<Integer>> gameScoresList = new ArrayList<ArrayList<Integer>>();
+		//ArrayList<double[]> unrankedFitnessScoresList = new ArrayList<double[]>();
+		ArrayList<Double> unrankedFitnessScoresList = new ArrayList<Double>();
+		ArrayList<double[]> topWeightSetsList = new ArrayList<double[]>();
+		
+		System.out.println("\nTesting top " + numberOfTopWeightSets + " weight sets...\n");
+		
+		for (int j = 0; j < numberOfTopWeightSets; j++) {
+			double[] weights = weightSetsList.get(j);
+			topWeightSetsList.add(weights);
+			System.out.print((j+1) + ") ");
+			double fitnessScore = advancedFitnessTester.runFitnessTest(weights);
+			
+			gameScoresList.add(advancedFitnessTester.getGameScores());
+			//unrankedFitnessScoresList.add(new double[]{fitnessScore, j});
+			unrankedFitnessScoresList.add(fitnessScore);
+		}
+		
+		double averageFitnessScore = fitnessTester.getAverageFitness(unrankedFitnessScoresList);
+		System.out.println("Average Fitness Score: " + averageFitnessScore);
+		for (int j = 0; j < numberOfTopWeightSets; j++){
+			double oldFitnessScore = fitnessScoresList.get(j);
+			System.out.print((j+1) + ") [" + convertWeightsToStringOfDecimals(weightSetsList.get(j)) + "] old: " + oldFitnessScore);
+			if (unrankedFitnessScoresList.get(j) >= averageFitnessScore) {
+				System.out.print(" new: " + Math.min(maxNumberOfRowsCleared, (oldFitnessScore+0.1)) + " (+0.1)\n");
+				fitnessScoresList.set(j, oldFitnessScore+0.1);
+			} else {
+				System.out.print(" new: " + (oldFitnessScore-1) + " (-1)\n");
+				fitnessScoresList.set(j, oldFitnessScore-1);
+			}
+		}
+		writePopulationToFile();
+		
+		if (writeReport) {
+			writeReportToFile(topWeightSetsList, unrankedFitnessScoresList, gameScoresList, ADVANCEDTESTREPORT);
+		}
+		
+	}*/
 }
