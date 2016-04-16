@@ -20,7 +20,7 @@ public class PlayerSkeleton {
 	
 	//Set mode as 1 to play game, 2 to run standard fitness test, 3 to run timed fitness test, 4 to run standard trial, 
 	//5 to run timed trial, 6 to run genetic algorithm
-	private static int mode = 1; 
+	private static int mode = 6; 
 	
 	//Weighted factors are aggregate height, number of holes, bumpiness, maximum heights sum, holes depth, and wells depth
 	private static double[] weightsDefault = normalizeWeight(new double[] 
@@ -35,9 +35,9 @@ public class PlayerSkeleton {
 	private static int maxNumberOfTurns = 500;  //how many turns before a game terminates -- for timed fitness test or timed trial (mode 3 or 5)
 	
 	//Modify these for the genetic algorithm
-	private static int geneticAlgo_nWeightSets = 1000;
-	private static int geneticAlgo_nGames = 100;
-	private static int geneticAlgo_maxTurns = 500;
+	private static int geneticAlgo_nWeightSets = 20;
+	private static int geneticAlgo_nGames = 10;
+	private static int geneticAlgo_maxTurns = 200;
 	
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -196,7 +196,7 @@ public class PlayerSkeleton {
 		private static final String DEFAULT_WEIGHTS_FILE_NAME = "group06Weights.txt";
 		private boolean writeReport = true; //set as true if you want to save the test report to file
 		
-		private int numberOfWeightedFactors = 7;
+		private int numberOfWeightedFactors = 6;
 		private DecimalFormat fourDP = new DecimalFormat("0.0000");
 		private File output;
 		private FileOutputStream fos;
@@ -510,10 +510,10 @@ public class PlayerSkeleton {
 				
 				for (int i = 0; i < numberOfGames; i++) {
 					State s = new State();
-					PlayerSkeletonLocalBeam p = new PlayerSkeletonLocalBeam(weights);
+					PlayerSkeleton p = new PlayerSkeleton();
 					
 					while(!s.hasLost() && s.getTurnNumber() < maxNumberOfTurns) {
-						s.makeMove(p.localBeamMove(s, s.legalMoves()));
+						s.makeMove(p.pickMove(s, s.legalMoves(), weightsDefault));
 					}
 					System.out.println("Game " + (i+1) + ": " + s.getRowsCleared());
 					gameScores.add(s.getRowsCleared());
@@ -775,7 +775,7 @@ public class PlayerSkeleton {
 
 			// returns the weight set of the child 
 			private double[] newOffspring(ArrayList<double[]> parents) {
-				double[] offspringWeightSet = new double[7];
+				double[] offspringWeightSet = new double[6];
 				double[] parentsFitnessScores = parents.get(2);
 				double parentAScore = parentsFitnessScores[0];
 				double parentBScore = parentsFitnessScores[1];
